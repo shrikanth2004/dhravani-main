@@ -1,0 +1,265 @@
+:root {
+    --background: #f8f9fa;
+    --card: #ffffff;
+    --card-foreground: #09090b;
+    --primary: #4263eb;
+    --primary-foreground: #fafafa;
+    --secondary: #f3f4f6;
+    --secondary-foreground: #1f2937;
+    --muted: #f3f4f6;
+    --muted-foreground: #6b7280;
+    --accent: #e8f0fe;
+    --accent-foreground: #1a73e8;
+    --destructive: #ef4444;
+    --destructive-foreground: #fafafa;
+    --border: #e5e7eb;
+    --input: #e5e7eb;
+    --ring: #4263eb;
+    --radius: 0.75rem;
+}
+
+body {
+    background-color: #f8fafc;
+    font-family: 'Inter', 'Google Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #374151;
+    line-height: 1.6;
+}
+
+.container-fluid {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Password Entry Section */
+#passwordSection.card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+#passwordSection .card-title {
+    color: var(--card-foreground);
+    font-weight: 600;
+}
+
+#passwordSection .text-muted {
+    color: var(--muted-foreground) !important;
+}
+
+#passwordSection .form-control {
+    border: 1px solid var(--input);
+    border-radius: calc(var(--radius) / 2);
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+#passwordSection .form-control:focus {
+    outline: none;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 2px rgba(66, 99, 235, 0.15);
+}
+
+/* Main Content Section */
+#mainContent {
+    margin-top: 24px;
+}
+
+.admin-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.06);
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+}
+
+.section-title {
+    color: var(--card-foreground);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-title i {
+    color: var(--primary);
+}
+
+.sub-section-title {
+    color: var(--card-foreground);
+    font-size: 16px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sub-section-title i {
+    color: var(--primary);
+    font-size: 14px;
+}
+
+.search-section, .admins-section {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+}
+
+/* Buttons */
+.btn {
+    font-weight: 500;
+    border-radius: calc(var(--radius) / 2);
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover {
+    background-color: #3a56d4;
+    border-color: #3a56d4;
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
+
+.btn-outline-secondary {
+    color: var(--muted-foreground);
+    border-color: var(--border);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+}
+
+.btn-danger, .btn-sm.btn-danger {
+    background-color: var(--destructive);
+    border-color: var(--destructive);
+    color: var(--destructive-foreground);
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+}
+
+/* Form elements */
+.input-group {
+    margin-bottom: 8px;
+}
+
+.input-group .form-control {
+    border: 1px solid var(--input);
+    border-radius: calc(var(--radius) / 2) 0 0 calc(var(--radius) / 2);
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.input-group .form-control:focus {
+    outline: none;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 2px rgba(66, 99, 235, 0.15);
+}
+
+.input-group .btn {
+    border-radius: 0 calc(var(--radius) / 2) calc(var(--radius) / 2) 0;
+}
+
+/* Table styling */
+.table {
+    width: 100%;
+    margin-bottom: 1rem;
+    color: var(--card-foreground);
+    vertical-align: top;
+    border-color: var(--border);
+}
+
+.table thead {
+    background-color: var(--secondary);
+}
+
+.table thead th {
+    border-bottom-width: 1px;
+    padding: 0.75rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+}
+
+.table tbody td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(66, 99, 235, 0.04);
+}
+
+/* Alert styling */
+.alert {
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px;
+}
+
+.alert-info {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+}
+
+.alert-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.alert-danger {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+/* Session timer */
+#sessionTimer {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    background-color: var(--secondary);
+    padding: 6px 12px;
+    border-radius: calc(var(--radius) / 2);
+}
+
+@media (max-width: 768px) {
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 12px;
+    }
+    
+    .d-flex.align-items-center.gap-3 {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    #passwordSection.card {
+        margin-left: 16px;
+        margin-right: 16px;
+    }
+}

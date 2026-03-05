@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>COILD Dhravani - Transcriber</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada&family=Google+Sans:wght@500&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Noto Sans Kannada', sans-serif;
+      background-color: #f9fafb;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 50px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+      display: flex;
+      gap: 30px;
+    }
+
+    .left-panel, .right-panel {
+      flex: 1;
+    }
+
+    .header h1 {
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #1a73e8;
+      margin-bottom: 30px;
+    }
+
+    .form-section {
+      padding: 30px;
+      border-radius: 12px;
+      border: 2px dashed #d1d5db;
+      text-align: center;
+      margin-bottom: 20px;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .form-section.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .upload-label {
+      display: inline-block;
+      cursor: pointer;
+      padding: 40px;
+      border-radius: 12px;
+      background-color: #f3f4f6;
+      transition: background 0.2s ease;
+    }
+
+    .upload-label:hover {
+      background-color: #e5e7eb;
+    }
+
+    .upload-label i {
+      font-size: 48px;
+      color: #6b7280;
+    }
+
+    .upload-label p {
+      margin-top: 10px;
+      color: #6b7280;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    #filePreview {
+      display: none;
+      opacity: 0;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #374151;
+      background-color: #e5e7eb;
+      padding: 12px 16px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: 500;
+      transition: opacity 0.3s ease;
+    }
+
+    #filePreview.show {
+      display: block;
+      opacity: 1;
+    }
+
+    button {
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 9999px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:disabled {
+      background-color: #93c5fd;
+      cursor: not-allowed;
+    }
+
+    #loading {
+      display: none;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    #result-box {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f3f4f6;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+      color: #111827;
+      font-size: 18px;
+      font-weight: 500;
+      min-height: 60px;
+    }
+
+    .right-panel select,
+    .right-panel label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .right-panel select {
+      padding: 10px;
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .checkbox {
+      margin-top: 20px;
+    }
+
+    .checkbox a {
+      color: #1a73e8;
+      text-decoration: none;
+      margin-left: 4px;
+    }
+
+    .start-session-btn {
+      margin-top: 20px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="left-panel">
+      <div class="header">
+        <h1>COILD Dhravani</h1>
+      </div>
+
+      <form id="transcribeForm" enctype="multipart/form-data">
+        <div class="form-section" id="formSection">
+          <div id="uploadWrapper">
+            <label for="fileInput" class="upload-label" id="uploadLabel">
+              <i class="fas fa-upload"></i>
+              <p>Click to upload an audio file</p>
+            </label>
+          </div>
+
+          <input id="fileInput" name="audio" type="file" accept="audio/*" required>
+
+          <div id="filePreview">
+            <i class="fas fa-music" style="margin-right: 8px; color: #4b5563;"></i>
+            <span id="fileName"></span>
+          </div>
+
+          <br>
+          <button type="submit" id="submitBtn" disabled>Transcribe</button>
+          <div id="loading">Transcribing… Please wait.</div>
+        </div>
+      </form>
+
+      <div id="result-box">Transcription output will appear here.</div>
+    </div>
+
+    <div class="right-panel">
+      <label for="transcriberSelect">Choose Transcriber</label>
+      <select id="transcriberSelect">
+        <option value="english">English</option>
+        <option value="kannada">Kannada</option>
+      </select>
+
+      <div class="checkbox">
+        <label style="display: flex; align-items: flex-start; font-size: 14px; gap: 8px;">
+          <input type="checkbox" id="agreeTerms" style="margin: 0;">
+          <span style="transform: translateY(1px);">
+            I agree to the 
+            <a href="/privacy" target="_blank">Privacy Policy and Terms of Service</a>
+          </span>
+        </label>
+      </div>
+
+      <button id="startSessionBtn" class="start-session-btn" disabled>Start Session</button>
+    </div>
+  </div>
+
+<script>
+  const agreeCheckbox = document.getElementById("agreeTerms");
+  const startSessionBtn = document.getElementById("startSessionBtn");
+  const formSection = document.getElementById("formSection");
+  const submitBtn = document.getElementById("submitBtn");
+  const fileInput = document.getElementById("fileInput");
+  const uploadLabel = document.getElementById("uploadLabel");
+  const filePreview = document.getElementById("filePreview");
+  const fileNameSpan = document.getElementById("fileName");
+  const loading = document.getElementById("loading");
+  const resultBox = document.getElementById("result-box");
+
+  // 🎤 MIC button creation (initially disabled)
+  const micButton = document.createElement("button");
+  micButton.textContent = "🎤 Start Recording";
+  micButton.style.marginTop = "20px";
+  micButton.style.width = "100%";
+  micButton.disabled = true;  // disabled until checkbox is checked
+  document.querySelector(".left-panel").appendChild(micButton);
+
+  // Enable or disable buttons based on checkbox
+  agreeCheckbox.addEventListener("change", () => {
+    const agreed = agreeCheckbox.checked;
+    startSessionBtn.disabled = !agreed;
+    micButton.disabled = !agreed;
+  });
+
+  startSessionBtn.addEventListener("click", () => {
+    formSection.classList.add("active");
+    submitBtn.disabled = false;
+  });
+
+  fileInput.addEventListener("change", function () {
+    const file = fileInput.files[0];
+    if (file) {
+      fileNameSpan.textContent = `Selected file: ${file.name}`;
+      filePreview.classList.add("show");
+      uploadLabel.style.display = "none";
+    } else {
+      resetUploadUI();
+    }
+  });
+
+  document.getElementById("transcribeForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    submitBtn.disabled = true;
+    loading.style.display = "block";
+    resultBox.textContent = "";
+
+    const formData = new FormData(this);
+    const transcriber = document.getElementById("transcriberSelect").value;
+    formData.append("transcriber", transcriber);
+
+    try {
+      const response = await fetch("/transcriber", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.transcription) {
+        resultBox.textContent = data.transcription;
+      } else {
+        resultBox.textContent = "Transcription failed.";
+      }
+    } catch (err) {
+      resultBox.textContent = "An error occurred. Please try again.";
+    } finally {
+      submitBtn.disabled = false;
+      loading.style.display = "none";
+      resetUploadUI();
+    }
+  });
+
+  function resetUploadUI() {
+    fileInput.value = "";
+    filePreview.classList.remove("show");
+    uploadLabel.style.display = "inline-block";
+  }
+
+  // 🎤 MIC recording logic
+  let mediaRecorder;
+  let audioChunks = [];
+
+  micButton.addEventListener("click", async () => {
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+      micButton.textContent = "🎤 Start Recording";
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = event => {
+        audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recorded_audio.webm");
+
+        const transcriber = document.getElementById("transcriberSelect").value;
+        formData.append("transcriber", transcriber);
+
+        loading.style.display = "block";
+        resultBox.textContent = "Transcribing recorded audio…";
+
+        try {
+          const response = await fetch("/transcriber", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+          if (data.transcription) {
+            resultBox.textContent = data.transcription;
+          } else {
+            resultBox.textContent = "Recording transcription failed.";
+          }
+        } catch (err) {
+          resultBox.textContent = "An error occurred during recording transcription.";
+        } finally {
+          loading.style.display = "none";
+        }
+      };
+
+      mediaRecorder.start();
+      micButton.textContent = "⏹️ Stop Recording";
+
+    } catch (err) {
+      alert("Microphone access denied or not supported in this browser.");
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Dataset Download Interface</title>
+    <style>
+        :root {
+            --primary-color: #FF6C37;
+            --secondary-color: #F4F4F4;
+            --text-color: #333333;
+            --border-color: #E8E8E8;
+            --hover-color: #FF8F6B;
+        }
+
+        body {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #FAFAFA;
+            color: var(--text-color);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 24px;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .form-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        fieldset {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            margin: 0;
+        }
+
+        legend {
+            color: var(--primary-color);
+            font-weight: 600;
+            padding: 0 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            color: var(--text-color);
+            background-color: white;
+        }
+
+        select:disabled {
+            background-color: var(--secondary-color);
+            cursor: not-allowed;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(255,108,55,0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: var(--hover-color);
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .stats-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            padding: 15px;
+            background: var(--secondary-color);
+            border-radius: 6px;
+        }
+
+        .stat-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .distribution-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .distribution-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+    </style>
+    <script src="/static/country-states.js"></script>
+    <script>
+        function populateStates() {
+            const countrySelect = document.getElementById('country');
+            const stateSelect = document.getElementById('state');
+            const selectedCountry = countrySelect.value;
+            
+            // Clear existing options
+            stateSelect.innerHTML = '<option value="">Select State</option>';
+            
+            if (selectedCountry && country_and_states.states[selectedCountry]) {
+                const states = country_and_states.states[selectedCountry];
+                states.forEach(state => {
+                    const option = document.createElement('option');
+                    option.value = state.name;
+                    option.textContent = state.name;
+                    stateSelect.appendChild(option);
+                });
+                stateSelect.disabled = false;
+            } else {
+                stateSelect.disabled = true;
+            }
+        }
+
+        window.onload = function() {
+            // Populate countries
+            const countrySelect = document.getElementById('country');
+            const countries = country_and_states.country;
+            for (const code in countries) {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = countries[code];
+                countrySelect.appendChild(option);
+            }
+        }
+        
+        async function updateStats() {
+            const form = document.querySelector('form');
+            const statsContainer = document.getElementById('stats');
+            const formData = new FormData(form);
+            const queryString = new URLSearchParams(formData).toString();
+
+            try {
+                const response = await fetch(`/stats?${queryString}`);
+                const stats = await response.json();
+                
+                document.getElementById('total-recordings').textContent = stats.total_recordings;
+                document.getElementById('total-duration').textContent = stats.total_duration_hours;
+                document.getElementById('language-count').textContent = stats.language_count;
+                
+                // Update distributions
+                updateDistribution('gender-dist', stats.gender_distribution);
+                updateDistribution('age-dist', stats.age_distribution);
+                updateDistribution('accent-dist', stats.accent_distribution);
+                
+                statsContainer.style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        function updateDistribution(elementId, data) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            
+            Object.entries(data).forEach(([key, value]) => {
+                const item = document.createElement('div');
+                item.className = 'distribution-item';
+                item.innerHTML = `
+                    <span>${key}</span>
+                    <span>${value}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Add event listeners to form inputs
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const inputs = form.querySelectorAll('select, input');
+            
+            inputs.forEach(input => {
+                input.addEventListener('change', updateStats);
+            });
+            
+            // Initial stats update
+            updateStats();
+        });
+    </script>
+</head>
+<body>
+    <h1>Audio Dataset Download Interface</h1>
+    
+    <div id="stats" class="stats-container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-title">Total Recordings</div>
+                <div class="stat-value" id="total-recordings">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Total Duration (hours)</div>
+                <div class="stat-value" id="total-duration">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Languages</div>
+                <div class="stat-value" id="language-count">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Gender Distribution</div>
+                <div class="distribution-list" id="gender-dist"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Age Distribution</div>
+                <div class="distribution-list" id="age-dist"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Accent Distribution</div>
+                <div class="distribution-list" id="accent-dist"></div>
+            </div>
+        </div>
+    </div>
+
+    <form action="/download" method="get">
+        <div class="form-container">
+            <fieldset>
+                <legend>Language and Demographics</legend>
+                <div class="form-group">
+                    <label for="language">Language:</label>
+                    <select name="language" id="language">
+                        <option value="">All Languages</option>
+                        {% for code, name in languages.items() %}
+                        <option value="{{ code }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender:</label>
+                    <select name="gender" id="gender">
+                        <option value="">All</option>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                        <option value="O">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="age_group">Age Group:</label>
+                    <select name="age_group" id="age_group">
+                        <option value="">All Ages</option>
+                        <option value="Teenagers">Teenagers</option>
+                        <option value="Adults">Adults</option>
+                        <option value="Elderly">Elderly</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="country">Country:</label>
+                    <select name="country" id="country" onchange="populateStates()">
+                        <option value="">Select Country</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="state">State/Region:</label>
+                    <select name="state" id="state" disabled>
+                        <option value="">Select State</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="accent">Accent:</label>
+                    <select name="accent" id="accent">
+                        <option value="">All Accents</option>
+                        <option value="Rural">Rural</option>
+                        <option value="Urban">Urban</option>
+                    </select>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Recording Details</legend>
+                <div class="form-group">
+                    <label for="duration_min">Min Duration (seconds)</label>
+                    <input type="number" name="duration_min" id="duration_min" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="duration_max">Max Duration (seconds)</label>
+                    <input type="number" name="duration_max" id="duration_max" step="0.1" min="0">
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" name="verified" id="verified" value="true">
+                    <label for="verified">Verified Recordings Only</label>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Download Options</legend>
+                <div class="form-group">
+                    <label for="max_recordings">Maximum Recordings</label>
+                    <input type="number" name="max_recordings" id="max_recordings" 
+                           value="100" min="1" max="1000">
+                </div>
+            </fieldset>
+        </div>
+
+        <button type="submit">Download Dataset</button>
+    </form>
+</body>
+</html>

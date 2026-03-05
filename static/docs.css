@@ -1,0 +1,349 @@
+/* Resets */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Variables - Updated to match main app styles with improved contrast */
+:root {
+    --primary-color: #1a73e8; /* Google Blue */
+    --primary-dark: #1557b0; 
+    --secondary-color: #5f6368; /* Google Gray */
+    --light-gray: #f8f9fa; /* Background color */
+    --border-color: #dadce0; /* Light border */
+    --text-color: #202124; /* Main text color */
+    --code-background-color: #e8eaed; /* Darker code background for better contrast */
+    --success-color: #2e7d32; /* Darker Google Green */
+    --error-color: #c62828; /* Darker Google Red */
+    --warning-color: #ef6c00; /* Darker Google Yellow */
+    --code-text-color: #b71c1c; /* Darker red for code text */
+}
+
+/* Base Styles - Updated to use Google Sans */
+body {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--light-gray);
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Typography */
+h1, h2, h3 {
+    color: var(--text-color);
+    margin-bottom: 0.75em;
+    line-height: 1.3;
+    font-weight: 500; /* Google Sans uses medium weight for headings */
+}
+
+h1 {
+    font-size: 2.3em;
+    margin-bottom: 0.8em;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.4em;
+    color: var(--primary-color);
+}
+
+h2 {
+    font-size: 1.8em;
+    margin: 1.2em 0 0.8em;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.3em;
+}
+
+h3 {
+    font-size: 1.4em;
+    margin: 1em 0 0.6em;
+    color: var(--text-color);
+}
+
+p {
+    font-size: 1em;
+    margin-bottom: 1em;
+    color: var(--secondary-color);
+    text-align: justify;
+    hyphens: auto;
+}
+
+/* Links - Updated to match main app */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+    color: var(--primary-dark);
+}
+
+/* Code Blocks */
+pre {
+    background-color: var(--code-background-color);
+    padding: 1.2em;
+    overflow-x: auto;
+    border-radius: 8px;
+    position: relative;
+    border: 1px solid var(--border-color);
+    font-size: 0.9em;
+    margin-bottom: 1.5em;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    color: var(--text-color); /* Ensuring code blocks have good contrast */
+}
+
+code {
+    font-family: monospace;
+    color: var(--code-text-color);
+    background-color: var(--code-background-color);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+/* Lists */
+ul, ol {
+    font-size: 1em;
+    margin-bottom: 1em;
+    padding-left: 1.8em;
+    text-align: justify;
+    hyphens: auto;
+}
+
+li {
+    margin-bottom: 0.5em;
+    color: var(--secondary-color);
+}
+
+/* Emphasis */
+strong {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.important {
+    color: #9c0006; /* Darker red for important messages */
+    font-weight: 500;
+    background-color: #f8f9fa; /* Light background to ensure contrast */
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    border-left: 3px solid #c62828;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.6em;
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+th, td {
+    padding: 0.8em;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 500;
+    font-size: 0.95em;
+}
+
+td {
+    font-size: 0.95em;
+}
+
+tbody tr:nth-child(even) {
+    background-color: rgba(0,0,0,0.02);
+}
+
+/* JSON Example - Updated for material design */
+.json-example {
+    padding: 0.8em;
+    border-radius: 8px;
+    font-family: monospace;
+    border: 1px solid var(--border-color);
+    font-size: 0.95em;
+    background-color: var(--code-background-color);
+    margin-bottom: 1.5em;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
+    color: var(--text-color); /* Ensuring JSON examples have good contrast */
+}
+
+/* Copy Button - Updated to match Google Material Button with better contrast */
+.copy-button {
+    position: absolute;
+    top: 0.7em;
+    right: 0.7em;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5em 0.8em;
+    border-radius: 24px; /* Round corners like other buttons */
+    cursor: pointer;
+    opacity: 0.9;
+    transition: all 0.2s;
+    font-size: 0.8em;
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-weight: 500;
+    letter-spacing: .25px;
+}
+
+.copy-button:hover {
+    background-color: var(--primary-dark);
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+/* Notification - Updated to match toast styling */
+#notification {
+    position: fixed;
+    top: 1.2em;
+    right: 1.2em;
+    background: white;
+    color: var(--success-color);
+    padding: 0.8em 1.4em;
+    border-radius: 8px;
+    display: none;
+    z-index: 1000;
+    font-size: 0.9em;
+    box-shadow: 0 2px 6px rgba(60, 64, 67, 0.15);
+    border-left: 4px solid var(--success-color);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Footer styling - consistent with other pages */
+.footer-row {
+    margin-top: 3rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 0;
+}
+
+.footer-left {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--secondary-color);
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.footer-logo:hover {
+    color: var(--primary-color);
+}
+
+.footer-nav {
+    display: flex;
+    gap: 2rem;
+}
+
+.footer-nav a {
+    color: var(--secondary-color);
+    font-size: 14px;
+    letter-spacing: 0.25px;
+}
+
+.footer-nav a:hover {
+    color: var(--primary-color);
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    h1 {
+        font-size: 1.8em;
+        margin-bottom: 0.6em;
+    }
+    
+    h2 {
+        font-size: 1.5em;
+    }
+    
+    h3 {
+        font-size: 1.3em;
+    }
+    
+    pre {
+        padding: 0.8em;
+        font-size: 0.85em;
+    }
+    
+    .copy-button {
+        padding: 0.3em 0.6em;
+        font-size: 0.7em;
+        top: 0.5em;
+        right: 0.5em;
+    }
+    
+    ul, ol {
+        padding-left: 1.5em;
+    }
+    
+    .json-example {
+        padding: 0.6em;
+        font-size: 0.85em;
+    }
+    
+    /* Footer adjustments for mobile */
+    .footer-content {
+        flex-direction: column;
+        padding: 15px 0;
+    }
+    
+    .footer-left {
+        margin-bottom: 15px;
+        justify-content: center;
+    }
+    
+    .footer-nav {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .footer-nav a {
+        font-size: 12px;
+    }
+    
+    /* Improve notification visibility on mobile */
+    #notification {
+        top: auto;
+        bottom: 1.2em;
+        right: 50%;
+        transform: translateX(50%);
+        padding: 0.6em 1.2em;
+        width: 80%;
+        text-align: center;
+        font-size: 0.9em;
+    }
+
+    /* Adjust back navigation for mobile */
+    .back-button {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Preconnect to required origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+        
+    <title>Admin Dashboard - COILD Dhravani</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='validate.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+    <meta name="csrf-token" content="{{ session['csrf_token'] }}">
+</head>
+<body>
+    <div class="container-fluid px-3">
+        <div class="d-flex justify-content-between align-items-center pt-3 pb-3">
+            <h1 class="mb-0 h4">COILD Dhravani Admin</h1>
+            <div class="d-flex align-items-center gap-3">
+                <a href="{{ url_for('super_admin.super_admin_interface') }}" class="btn btn-outline-danger">
+                    <i class="fas fa-user-shield"></i>
+                    Super Admin
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-primary">Back to Recording</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">Logout</a>
+            </div>
+        </div>
+
+        <!-- Display admin information from PocketBase -->
+        {% if pb_user %}
+        <div class="alert alert-info mb-3">
+            <p class="mb-0">
+                <i class="fas fa-user-shield"></i> 
+                Admin: {{ pb_user.name or pb_user.email }} ({{ pb_user.email }})
+            </p>
+        </div>
+        {% endif %}
+
+        <div class="admin-container">
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.total_users }}</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.total_languages }}</div>
+                    <div class="stat-label">Total Languages</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.total_recordings }}</div>
+                    <div class="stat-label">Total Recordings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ "%.1f"|format(stats.total_duration / 3600) }}</div>
+                    <div class="stat-label">Recording Hours</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ verification_rate }}%</div>
+                    <div class="stat-label">Verification Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ stats.total_transcripts }}</div>
+                    <div class="stat-label">Total Transcripts</div>
+                </div>
+            </div>
+
+            <!-- Language Statistics Table -->
+            <div class="admin-card mb-4">
+                <h2 class="section-title mb-4">
+                    <i class="fas fa-language"></i>
+                    Language Statistics
+                </h2>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Language</th>
+                                <th>Total Users</th>
+                                <th>Available Transcripts</th>
+                                <th>Total Recordings</th>
+                                <th>Recording Hours</th>
+                                <th>Verification Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for code, lang_stats in stats.languages.items() %}
+                            <tr>
+                                <td>{{ languages|selectattr("code", "equalto", code)|map(attribute="name")|first }}</td>
+                                <td>{{ lang_stats.total_users }}</td>
+                                <td>{{ lang_stats.available_transcripts }}</td>
+                                <td>{{ lang_stats.recordings }}</td>
+                                <td>{{ "%.1f"|format(lang_stats.total_duration / 3600) }}</td>
+                                <td>{{ "%.1f"|format(100 * lang_stats.verified / lang_stats.recordings if lang_stats.recordings > 0 else 0) }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- User Management Section -->
+            <div class="admin-card mb-4">
+                <h2 class="section-title mb-4">
+                    <i class="fas fa-users-cog"></i>
+                    User Management
+                </h2>
+
+                <!-- Add Moderator Search -->
+                <div class="search-section mb-4">
+                    <h3 class="sub-section-title mb-3">
+                        <i class="fas fa-user-plus"></i>
+                        Add/Remove Moderator
+                    </h3>
+                    <div class="input-group">
+                        <input type="email" 
+                               id="searchEmail" 
+                               class="form-control" 
+                               placeholder="Enter email addresses (comma-separated)..."
+                               multiple
+                               title="Enter one or more email addresses, separated by commas">
+                        <button class="btn btn-outline-primary" id="searchButton">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                    <small class="form-text text-muted">
+                        Example: user1@example.com, user2@example.com
+                    </small>
+                    <div id="searchResults" class="table-responsive mt-3" style="display: none;">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Current Role</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Search results will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Current Moderators List -->
+                <div class="moderators-section">
+                    <h3 class="sub-section-title mb-3">
+                        <i class="fas fa-user-shield"></i>
+                        Current Moderators
+                    </h3>
+                    <div class="table-responsive moderators-table-container">
+                        <table class="table table-hover" id="moderatorsTable">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Moderators will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Admin Interface -->
+            <div class="admin-card">
+                <form id="adminForm" method="POST" action="/admin/submit" enctype="multipart/form-data">
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-language"></i>
+                            Language Selection
+                        </h2>
+                        <div class="language-select">
+                            <label for="language" class="form-label">Select language for transcription</label>
+                            <select id="language" name="language" class="form-control" required>
+                                <option value="">Select Language</option>
+                                {% for lang in languages %}
+                                <option value="{{ lang.code }}">{{ lang.name }} ({{ lang.native_name }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Add Domain Selection -->
+                        <div class="domain-select mt-3">
+                            <label for="domain" class="form-label">Select domain</label>
+                            <select id="domain" name="domain" class="form-control" required>
+                                {% for code, name in domains.items() %}
+                                <option value="{{ code }}" {% if code == "GEN" %}selected{% endif %}>{{ name }} ({{ code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Add Subdomain Selection -->
+                        <div class="subdomain-select mt-3">
+                            <label for="subdomain" class="form-label">Select subdomain</label>
+                            <select id="subdomain" name="subdomain" class="form-control" required disabled>
+                                <!-- Placeholder will be replaced by JavaScript -->
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-file-upload"></i>
+                            Upload Transcription
+                        </h2>
+                        <div class="file-upload-area" id="dropArea">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h5>Drop your file here or click to browse</h5>
+                            <p class="text-muted">Supported formats: .txt, .csv</p>
+                            <input type="file" name="fileInput" id="fileInput" accept=".txt,.csv" style="display: none;">
+                            <div id="uploadProgress" class="progress" style="display: none;">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-edit"></i>
+                            Preview and Edit
+                        </h2>
+                        <div class="stats-bar mb-2">
+                            <span class="me-3">
+                                <i class="fas fa-list"></i>
+                                Lines: <span id="lineCount">0</span>
+                            </span>
+                            <span>
+                                <i class="fas fa-font"></i>
+                                Words: <span id="wordCount">0</span>
+                            </span>
+                        </div>
+                        <textarea id="transcription_text" name="transcription_text" 
+                                class="form-control" rows="10" required
+                                placeholder="Transcription text will appear here..."
+                                onchange="updateCounts(this.value)"></textarea>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="submit" class="btn btn-primary btn-admin" id="submitButton">
+                            <i class="fas fa-save"></i>
+                            Submit
+                        </button>
+                        <div class="upload-loading" id="uploadLoading" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Uploading...</span>
+                            </div>
+                            <span class="upload-status">Uploading transcriptions...</span>
+                        </div>
+                        <button type="reset" class="btn btn-outline-secondary btn-admin">
+                            <i class="fas fa-undo"></i>
+                            Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Dataset Sync Section -->
+            <div class="admin-card mb-4">
+                <h2 class="section-title mb-4">
+                    <i class="fas fa-sync"></i>
+                    Dataset Synchronization
+                </h2>
+                <div class="sync-controls">
+                    <div class="sync-info">
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle"></i>
+                            <div class="alert-content">
+                                <h3 class="alert-heading">About Dataset Sync</h3>
+                                <p class="mb-0">This will synchronize all verified recordings and their metadata to Hugging Face. The process includes:</p>
+                                <ul class="sync-details">
+                                    <li>Updating Parquet metadata files</li>
+                                    <li>Syncing verified audio recordings</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sync-actions">
+                        <button id="syncButton" class="btn btn-primary">
+                            <i class="fas fa-sync"></i>
+                            Start Synchronization
+                        </button>
+                        <div id="syncStatus" class="mt-3" style="display: none;">
+                            <div class="sync-progress">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Syncing...</span>
+                                </div>
+                                <div class="sync-status-text">
+                                    <span class="status-message">Synchronizing dataset...</span>
+                                    <span class="status-detail">This may take several minutes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const transcriptionText = document.getElementById('transcription_text');
+        const adminForm = document.getElementById('adminForm');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const dropArea = document.getElementById('dropArea');
+        const domainSelect = document.getElementById('domain');
+        const subdomainSelect = document.getElementById('subdomain');
+
+        // Function to load subdomains for a domain
+        async function loadSubdomains(domainCode) {
+            subdomainSelect.innerHTML = '<option value="">Loading...</option>';
+            subdomainSelect.disabled = true;
+            
+            if (!domainCode) {
+                // If no domain code, set GEN as default
+                domainSelect.value = 'GEN';
+                domainCode = 'GEN';
+            }
+            
+            try {
+                const response = await fetch(`/admin/subdomains/${domainCode}`);
+                const data = await response.json();
+                
+                if (data.subdomains && Array.isArray(data.subdomains)) {
+                    // Clear dropdown
+                    subdomainSelect.innerHTML = '';
+                    
+                    data.subdomains.forEach(subdomain => {
+                        const option = document.createElement('option');
+                        option.value = subdomain.mnemonic;
+                        option.textContent = `${subdomain.name} (${subdomain.mnemonic})`;
+                        
+                        // Auto-select GEN subdomain
+                        if (subdomain.mnemonic === 'GEN') {
+                            option.selected = true;
+                        }
+                        
+                        subdomainSelect.appendChild(option);
+                    });
+                    
+                    subdomainSelect.disabled = false;
+                    
+                    // If no option is selected, select the first one
+                    if (!subdomainSelect.value && subdomainSelect.options.length > 0) {
+                        subdomainSelect.options[0].selected = true;
+                    }
+                } else {
+                    subdomainSelect.innerHTML = '<option value="">No subdomains available</option>';
+                }
+            } catch (error) {
+                console.error('Error fetching subdomains:', error);
+                subdomainSelect.innerHTML = '<option value="">Error loading subdomains</option>';
+            }
+        }
+
+        // Add domain change handler to update subdomains
+        domainSelect.addEventListener('change', function() {
+            loadSubdomains(this.value);
+        });
+
+        // Add click handler for the drop area
+        dropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        function updateCounts(text) {
+            const lines = text.split('\n').filter(line => line.trim().length > 0);
+            const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+            
+            document.getElementById('lineCount').textContent = lines.length;
+            document.getElementById('wordCount').textContent = words.length;
+        }
+
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if(file) {
+                handleFileUpload(file);
+            }
+        });
+
+        // Add drag and drop handling
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropArea.classList.add('drag-highlight');
+        }
+
+        function unhighlight(e) {
+            dropArea.classList.remove('drag-highlight');
+        }
+
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            
+            if (file) {
+                const fileType = file.name.split('.').pop().toLowerCase();
+                if (['txt', 'csv'].includes(fileType)) {
+                    fileInput.files = dt.files;
+                    handleFileUpload(file);
+                } else {
+                    alert('Please upload only .txt or .csv files');
+                }
+            }
+        }
+
+        function handleFileUpload(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                transcriptionText.value = content;
+                updateCounts(content);
+                uploadProgress.style.display = 'block';
+                uploadProgress.querySelector('.progress-bar').style.width = '100%';
+            }
+            reader.readAsText(file);
+        }
+
+        // Add listener for manual text changes
+        transcriptionText.addEventListener('input', function() {
+            updateCounts(this.value);
+        });
+
+        adminForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitButton = document.getElementById('submitButton');
+            const uploadLoading = document.getElementById('uploadLoading');
+            
+            // Disable submit button and show loading
+            submitButton.disabled = true;
+            uploadLoading.style.display = 'flex';
+            
+            // Create new FormData and explicitly add the textarea content
+            const formData = new FormData();
+            formData.append('language', document.getElementById('language').value);
+            formData.append('domain', document.getElementById('domain').value);
+            formData.append('subdomain', document.getElementById('subdomain').value);
+            formData.append('transcription_text', transcriptionText.value);
+            
+            // Include the file if one was selected
+            const fileInputElement = document.getElementById('fileInput');
+            if (fileInputElement.files.length > 0) {
+                formData.append('fileInput', fileInputElement.files[0]);
+            }
+            
+            try {
+                const response = await fetch('/admin/submit', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if(response.ok) {
+                    alert(`Transcriptions uploaded successfully!\nLines: ${document.getElementById('lineCount').textContent}\nWords: ${document.getElementById('wordCount').textContent}`);
+                    uploadProgress.style.display = 'none';
+                    transcriptionText.value = '';
+                    fileInput.value = '';
+                    // Reset counts
+                    updateCounts('');
+                } else {
+                    throw new Error(result.error || 'Upload failed');
+                }
+            } catch(error) {
+                alert('Error: ' + error.message);
+            } finally {
+                // Re-enable submit button and hide loading
+                submitButton.disabled = false;
+                uploadLoading.style.display = 'none';
+            }
+        });
+
+        async function loadModerators() {
+            try {
+                const response = await fetch('/admin/users/moderators');
+                const data = await response.json();
+                const tbody = document.querySelector('#moderatorsTable tbody');
+                tbody.innerHTML = '';
+                
+                if (data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center">No moderators found</td></tr>';
+                    return;
+                }
+
+                data.users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${user.email}</td>
+                        <td>${user.name || 'N/A'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning remove-mod" data-user-id="${user.id}">
+                                Remove Moderator
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Add event listeners for remove buttons
+                document.querySelectorAll('.remove-mod').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        if(confirm('Remove moderator privileges from this user?')) {
+                            await updateUserRole(this.dataset.userId, 'user');
+                            loadModerators();
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading moderators:', error);
+            }
+        }
+
+        async function updateUserRole(userId, newRole) {
+            try {
+                const response = await fetch(`/admin/users/${userId}/role`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ role: newRole })
+                });
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server response was not JSON');
+                }
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to update role');
+                }
+                
+                await loadModerators();
+                return true;
+            } catch (error) {
+                console.error('Error updating role:', error);
+                alert('Error updating role: ' + error.message);
+                return false;
+            }
+        }
+
+        // Add search functionality
+        document.getElementById('searchButton').addEventListener('click', async function() {
+            const emailInput = document.getElementById('searchEmail').value.trim();
+            if (!emailInput) {
+                alert('Please enter at least one email address');
+                return;
+            }
+
+            // Split and validate emails
+            const emails = emailInput.split(',').map(e => e.trim()).filter(e => e);
+            const validateEmail = (email) => {
+                return String(email)
+                    .toLowerCase()
+                    .match(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/);
+            };
+
+            const invalidEmails = emails.filter(email => !validateEmail(email));
+            if (invalidEmails.length > 0) {
+                alert(`Invalid email address(es):\n${invalidEmails.join('\n')}`);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/admin/users/search?email=${encodeURIComponent(emailInput)}`);
+                const data = await response.json();
+                
+                const resultsDiv = document.getElementById('searchResults');
+                const tbody = resultsDiv.querySelector('tbody');
+                tbody.innerHTML = '';
+                
+                if (data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No users found</td></tr>';
+                } else {
+                    data.users.forEach(user => {
+                        const tr = document.createElement('tr');
+                        const isModerator = user.role === 'moderator';
+                        const isAdmin = user.role === 'admin';
+                        
+                        tr.innerHTML = `
+                            <td>${user.email}</td>
+                            <td>${user.name || 'N/A'}</td>
+                            <td>${user.role}</td>
+                            <td>
+                                ${isAdmin ? 
+                                    '<span class="text-muted">Admin - No Action Available</span>' :
+                                    `<button class="btn btn-sm ${isModerator ? 'btn-warning' : 'btn-primary'} toggle-role" 
+                                        data-user-id="${user.id}" 
+                                        data-current-role="${user.role}">
+                                        ${isModerator ? 'Remove Moderator' : 'Make Moderator'}
+                                    </button>`
+                                }
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+                
+                resultsDiv.style.display = 'block';
+
+                // Add event listeners for role toggle buttons
+                document.querySelectorAll('.toggle-role').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const userId = this.dataset.userId;
+                        const currentRole = this.dataset.currentRole;
+                        const newRole = currentRole === 'moderator' ? 'user' : 'moderator';
+                        const action = newRole === 'moderator' ? 'make this user a moderator' : 'remove moderator privileges';
+                        
+                        if(confirm(`Are you sure you want to ${action}?`)) {
+                            await updateUserRole(userId, newRole);
+                            loadModerators();
+                            // Refresh the search results
+                            document.getElementById('searchButton').click();
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('Error searching users:', error);
+                alert('Error searching users');
+            }
+        });
+
+        // Update the click handlers to use async/await
+        document.querySelectorAll('.make-mod').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                if (confirm('Make this user a moderator?')) {
+                    const success = await updateUserRole(this.dataset.userId, 'moderator');
+                    if (success) {
+                        document.getElementById('searchEmail').value = '';
+                        document.getElementById('searchResults').style.display = 'none';
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('.remove-mod').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                if (confirm('Remove moderator privileges from this user?')) {
+                    await updateUserRole(this.dataset.userId, 'user');
+                }
+            });
+        });
+
+        // Load moderators when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            loadModerators();
+            
+            // Load default subdomains for selected domain (should be GEN by default)
+            if (domainSelect.value) {
+                await loadSubdomains(domainSelect.value);
+            } else {
+                // Fallback to GEN if no domain is selected
+                domainSelect.value = 'GEN';
+                await loadSubdomains('GEN');
+            }
+        });
+
+        // Add Dataset Sync Handler
+        document.getElementById('syncButton').addEventListener('click', async function() {
+            try {
+                const button = this;
+                const statusDiv = document.getElementById('syncStatus');
+                
+                // Check if sync is already running
+                const statusResponse = await fetch('/admin/sync/status');
+                const statusData = await statusResponse.json();
+                
+                if (statusData.is_syncing) {
+                    alert('A sync operation is already in progress');
+                    return;
+                }
+                
+                // Disable button and show status
+                button.disabled = true;
+                statusDiv.style.display = 'block';
+                
+                const response = await fetch('/admin/sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Dataset synchronization completed successfully!');
+                } else if (response.status === 409) {
+                    alert('A sync operation is already in progress');
+                } else {
+                    throw new Error(result.error || 'Sync failed');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                // Re-enable button and hide status
+                this.disabled = false;
+                document.getElementById('syncStatus').style.display = 'none';
+            }
+        });
+
+        // Remove all the periodic sync status checking code
+        // Removed: checkSyncStatus function and related interval setup
+    </script>
+</body>
+</html>

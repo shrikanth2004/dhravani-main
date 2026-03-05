@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dhravani - A comprehensive platform for creating speech corpora for Automatic Speech Recognition (ASR). Learn about installation, usage, and API reference.">
+    <title>Dhravani - Manual</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='docs.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='privacy.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='mobile.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    
+    <h1>Dhravani - Manual</h1>
+
+    <div id="notification">Copied to clipboard!</div>
+
+    <h2>Overview</h2>
+    <p>Dhravani is a web-based application developed under the "Center of Indian Language Data" project for creating speech corpora for Automatic Speech Recognition (ASR). The platform streamlines the creation and management of audio datasets by facilitating recording, managing, and organizing voice recordings with their transcriptions.</p>
+    
+    <p>Users record audio from provided transcripts, with data being stored in PostgreSQL tables for both transcripts and metadata. Moderators then verify recordings for quality control, after which validated content is transferred to HuggingFace either through manual triggers or scheduled synchronization intervals. This comprehensive workflow ensures high-quality speech data collection and organization.</p>
+
+    <h2>Installation</h2>
+
+    <h3>Prerequisites</h3>
+    <ul>
+        <li>Python 3.11+</li>
+        <li>Docker (optional, for containerized deployment)</li>
+        <li>PostgreSQL database</li>
+        <li>PocketBase instance</li>
+        <li>Hugging Face account and token</li>
+    </ul>
+
+    <h3>Steps</h3>
+    <ol>
+        <li><strong>Clone the repository:</strong>
+            <pre><code>git clone <repository_url>
+cd dataset-preparation-tool</code><button class="copy-button" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copy</button></pre>
+        </li>
+        <li><strong>Set up the environment:</strong>
+            <ul>
+                <li>Using venv (recommended):
+                    <pre><code>python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt</code><button class="copy-button" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copy</button></pre>
+                </li>
+                <li>Using Docker:
+                    <ol>
+                        <li>Build the Docker image:
+                            <pre><code>docker build -t dataset-preparation .</code><button class="copy-button" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copy</button></pre>
+                        </li>
+                        <li>Run the Docker container:
+                            <pre><code>docker run -p 7860:7860 -v dataset_volume:/app/datasets dataset-preparation</code><button class="copy-button" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copy</button></pre>
+                            <p><strong>Note:</strong> The <code>-v dataset_volume:/app/datasets</code> option mounts a volume for persistent datasets, preserving your data.</p>
+                        </li>
+                    </ol>
+                </li>
+            </ul>
+        </li>
+        <li><strong>Configure environment variables:</strong>
+            <p>Create a <code>.env</code> file in the root directory with the following configuration:</p>
+            <pre><code># Security
+FLASK_SECRET_KEY=your_secure_secret_key
+JWT_SECRET_KEY=${FLASK_SECRET_KEY}  # Defaults to FLASK_SECRET_KEY
+SUPER_ADMIN_PASSWORD=your_secure_admin_password
+SUPER_USER_EMAILS=admin1@example.com,admin2@example.com
+ENABLE_AUTH=true
+
+# Database and Services
+POSTGRES_URL=postgresql://user:password@localhost:5432/dataset_db
+POCKETBASE_URL=http://localhost:8090
+HF_TOKEN=your_huggingface_token
+HF_REPO_ID=your_username/your_dataset
+
+# Storage Configuration
+SAVE_LOCALLY=true
+DATASET_BASE_DIR=/app/datasets
+TEMP_FOLDER=./temp
+
+# Batch Processing
+TRANSCRIPT_BATCH_SIZE=100
+SYNC_MEMORY_LIMIT_MB=1024
+UPLOAD_CHUNK_SIZE=8388608  # 8MB in bytes
+UPLOAD_BATCH_SIZE=10
+MAX_UPLOAD_WORKERS=4
+MAX_UPLOAD_RETRIES=3
+
+# Network Settings
+NETWORK_TIMEOUT=30  # seconds
+FLASK_PORT=7860
+
+# Sync Schedule (UTC)
+SYNC_HOUR=2
+SYNC_MINUTE=0
+SYNC_TIMEZONE=UTC</code><button class="copy-button" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copy</button></pre>
+            <p class="important"><strong>Important:</strong> Replace the placeholder values with your actual configuration parameters. Never commit sensitive credentials to version control.</p>
+        </li>
+    </ol>
+
+    <h2>Usage</h2>
+
+    <h3>Running the application</h3>
+    <ul>
+        <li>Using venv:
+            <pre><code>flask run --host=0.0.0.0 --port=7860</code><button class="copy-button" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copy</button></pre>
+        </li>
+        <li>Using Docker: (Refer to Installation step 2.2)</li>
+    </ul>
+
+    <h2>Key Functionalities</h2>
+    <ol>
+        <li><strong>Data Recording:</strong> Record audio through the intuitive web interface. Audio is saved as WAV files after applying fade-in, trimming, and fade-out processes.</li>
+        <li><strong>Transcription:</strong> Efficiently upload transcriptions in .txt or .csv format via the admin interface. All transcription data is securely stored in the PostgreSQL database.</li>
+        <li><strong>Validation:</strong> Enable moderators to validate recordings and transcriptions using a dedicated web interface, which offers filtering options by language and validation status.</li>
+        <li><strong>Synchronization:</strong> Perform automatic and manual dataset synchronization with Hugging Face Hub. This includes comprehensive hash calculation, Parquet preparation, and secure file uploads.</li>
+        <li><strong>User Management:</strong>  Utilize the admin interface to manage user roles (user, moderator, admin) through PocketBase. Super admins have the authority to manage other admin accounts.</li>
+    </ol>
+
+    <h3>Accessing the application</h3>
+    <p>Open your preferred web browser and navigate to <code>http://localhost:7860</code> (or the appropriate Docker address, if applicable).</p>
+
+    <h2>Architecture</h2>
+    <p>The application adopts a three-tier architecture:</p>
+    <ul>
+        <li><strong>Backend-as-a-Service (BaaS):</strong> PocketBase manages user authentication and implements a four-tier hierarchy - Super users with complete administration access, ADMINS for moderator management, Moderators for content validation, and regular USERS who contribute recordings. All users except Super users authenticate via Google OAuth2.</li>
+        <li><strong>Application Layer:</strong> Python Flask application handles the user interface, recording management, and data processing workflows.</li>
+        <li><strong>Storage Layer:</strong> Combines PostgreSQL for metadata and transcriptions with HuggingFace Hub for final dataset storage, organizing files in language-specific directories with structured parquet files.</li>
+    </ul>
+
+    <h3>Architecture Diagram</h3>
+    
+    <img src="{{ url_for('static', filename='block_diagram.svg') }}" alt="System architecture diagram showing user authentication, data processing, and dataset publishing flows" style="width:100%; max-width:800px; height:auto; margin:20px auto; display:block;">
+    
+    <h4>Flow Description:</h4>
+    <p><strong>User Authentication (A):</strong> The authentication flow supports a four-tier hierarchy where Super Admin have complete system access and adding of Admin with a SUPER_ADMIN_PASSWORD, followed by Admins who manage moderators and system processes. Moderators are assigned for content validation, while regular users can contribute recordings through the platform.</p>
+
+    <p><strong>Data Processing (B):</strong> At the core of the system, PostgreSQL tables store both transcripts and metadata. The application organizes audio files in language-specific structures, implementing a comprehensive quality control workflow managed by moderators. This phase also handles preparation for HuggingFace synchronization, ensuring data integrity throughout the process.</p>
+
+    <p><strong>Dataset Publishing (C):</strong> The final stage involves organizing validated recordings in structured, language-specific directories. The system generates and maintains metadata parquet files for efficient data management. Content synchronization with HuggingFace occurs either through scheduled automated processes or manual triggers, making the verified datasets publicly accessible.</p>
+
+    <h2>API Reference</h2>
+
+    <h3>Authentication Endpoints (<code>auth_middleware.py</code>, PocketBase)</h3>
+    <ul>
+        <li><code>/auth/callback</code> (POST):  PocketBase authentication callback endpoint, responsible for storing user sessions and tokens.</li>
+        <li><code>/login</code> (GET): Renders the login page.</li>
+        <li><code>/logout</code> (GET):  Logs out the current user, clearing all session and authentication cookies.</li>
+        <li><code>/token/refresh</code> (GET): Refreshes the access token for continued authenticated access.</li>
+    </ul>
+
+    <h3>Data Recording Endpoints (<code>app.py</code>)</h3>
+    <ul>
+        <li><code>/start_session</code> (POST):  Starts a new recording session, initializing the <code>AudioDatasetPreparator</code>. CSRF protected.</li>
+        <li><code>/next_transcript</code> (GET): Retrieves the next transcription from the <code>LazyTranscriptLoader</code>.</li>
+        <li><code>/prev_transcript</code> (GET): Retrieves the previous transcription.</li>
+        <li><code>/skip_transcript</code> (GET): Skips the current transcription and retrieves the subsequent one.</li>
+        <li><code>/save_recording</code> (POST):  Saves the audio recording and associated metadata. CSRF protected. Performs necessary audio processing and storage.</li>
+        <li><code>/languages</code> (GET): Retrieves a list of supported languages (defined in <code>language_config.py</code>).</li>
+    </ul>
+
+    <h3>Validation Endpoints (<code>validation_route.py</code>, moderator access required)</h3>
+    <ul>
+        <li><code>/validation/</code> (GET): Renders the validation interface for moderators.</li>
+        <li><code>/validation/api/recordings</code> (GET): Retrieves recordings for validation, supporting pagination and filtering options.</li>
+        <li><code>/validation/api/verify/<recording_id></code> (POST): Verifies or rejects a specific recording. CSRF protected.</li>
+        <li><code>/validation/api/audio/<filename></code> (GET): Serves a specific audio file.</li>
+        <li><code>/validation/api/delete/<recording_id></code> (DELETE): Deletes a recording. CSRF protected.</li>
+        <li><code>/validation/api/next_recording</code> (GET):  Retrieves the next recording for validation, utilizing the <code>assign_recording</code> function.</li>
+    </ul>
+
+    <h3>Admin Endpoints (<code>admin_routes.py</code>, admin access required)</h3>
+    <ul>
+        <li><code>/admin/</code> (GET): Renders the admin interface.</li>
+        <li><code>/admin/submit</code> (POST):  Submits transcriptions from either a file upload or direct text input.</li>
+        <li><code>/admin/users/moderators</code> (GET): Retrieves a list of all moderators.</li>
+        <li><code>/admin/users/search</code> (GET): Allows searching for a user by email address.</li>
+        <li><code>/admin/users/<user_id>/role</code> (POST):  Updates the role of a specific user.</li>
+        <li><code>/admin/sync/status</code> (GET): Checks the current status of the dataset synchronization process.</li>
+        <li><code>/admin/sync</code> (POST): Manually triggers a dataset synchronization.</li>
+    </ul>
+
+    <h3>Super Admin Endpoints (<code>super_admin.py</code>, super admin access required)</h3>
+    <ul>
+        <li><code>/admin/super/</code> (GET): Renders the super admin interface.</li>
+        <li><code>/admin/super/verify</code> (POST):  Verifies the super admin password for sensitive operations.</li>
+        <li><code>/admin/super/admins</code> (GET): Retrieves a list of all admin users.</li>
+        <li><code>/admin/super/users/search</code> (GET): Allows searching for a user by email address.</li>
+        <li><code>/admin/super/users/<user_id>/role</code> (POST):  Updates the role of a specific user.</li>
+    </ul>
+
+    <h2>Data Models</h2>
+
+    <h3>User:</h3>
+    <pre class="json-example"><code>{
+    "id": "string",
+    "email": "string",
+    "name": "string",
+    "role": "user" | "moderator" | "admin",
+    "is_moderator": boolean,
+    "gender": "M" | "F" | "O" | null,
+    "age_group": "Teenagers" | "Adults" | "Elderly" | null,
+    "country": "string" | null,
+    "state_province": "string" | null,
+    "city": "string" | null,
+    "accent": "Rural" | "Urban" | null,
+    "language": "string" | null
+}</code></pre>
+
+    <h3>PocketBase API Rules:</h3>
+    <pre class="json-example"><code># List/Search rule - Only admins can list all users, users can only see their own record
+(@request.auth.role = "admin") || (@request.auth.id = id)
+
+# View rule - Only admins can view any user, users can only view their own record
+(@request.auth.role = "admin") || (@request.auth.id = id)
+
+# Update rule - Admins can update any user, users/moderators can only update their own record without changing role
+(
+   @request.auth.role = "admin"
+) || (
+  (@request.auth.role = "user" || @request.auth.role = "moderator") &&
+   @request.auth.id = id &&
+   role = role
+)</code><button class="copy-button" onclick="copyCode(this)"><i class="fas fa-copy"></i> Copy</button></pre>
+
+    <h3>Recording:</h3>
+    <pre class="json-example"><code>{
+    "id": integer,
+    "user_id": "string",
+    "audio_filename": "string",
+    "transcription_id": integer,
+    "speaker_name": "string",
+    "speaker_id": "string",
+    "audio_path": "string",
+    "sampling_rate": integer,
+    "duration": float,
+    "language": "string",
+    "gender": "string",
+    "country": "string",
+    "state": "string",
+    "city": "string",
+    "status": "pending" | "verified" | "rejected",
+    "verified_by": "string" | null,
+    "username": "string",
+    "age_group": "string",
+    "accent": "string",
+    "transcription": "string"
+}</code></pre>
+
+    <h2>Key Classes and Functions</h2>
+    <ul>
+        <li><code>AudioDatasetPreparator</code> (<code>prepare_dataset.py</code>): Manages local audio storage, processes audio files, and handles metadata operations.</li>
+        <li><code>LazyTranscriptLoader</code> (<code>lazy_loader.py</code>):  Loads transcriptions in batches to optimize memory usage, especially with large datasets.</li>
+        <li><code>DatasetSynchronizer</code> (<code>dataset_sync.py</code>): Orchestrates the dataset synchronization process with Hugging Face Hub, ensuring data integrity.</li>
+        <li><code>update_parquet_files</code> (<code>prepare_parquet.py</code>): Updates Parquet files with the latest verified records for each language.</li>
+        <li><code>store_metadata</code> (<code>database_manager.py</code>):  Persists recording metadata in the PostgreSQL database.</li>
+        <li><code>assign_recording</code> (<code>database_manager.py</code>): Assigns a recording to a moderator for validation purposes.</li>
+        <li><code>verify_password_secure</code> (<code>super_admin.py</code>):  Securely verifies the super admin password, preventing timing attacks.</li>
+        <li><code>set_security_headers</code> (<code>security_middleware.py</code>):  Sets security headers to protect against common web vulnerabilities.</li>
+        <li><code>csrf_protect</code> (<code>security_middleware.py</code>):  Provides CSRF protection for data-modifying routes.</li>
+    </ul>
+<!-- Footer (same as login page) -->
+<div class="row footer-row">
+    <div class="col-12">
+        <div class="footer-content">
+            <div class="footer-left">
+                <a href="https://github.com/COILDOrg" class="footer-logo github" target="_blank">
+                    <img src="{{ url_for('static', filename='gh-logo.svg') }}" alt="GitHub Logo" width="24" height="24">
+                    <span>GitHub</span>
+                </a>
+                <a href="https://huggingface.co/coild" class="footer-logo huggingface" target="_blank">
+                    <img src="{{ url_for('static', filename='hf-logo.svg') }}" alt="Hugging Face Logo" width="24" height="24">
+                    <span>Hugging Face</span>
+                </a>
+            </div>
+            <nav class="footer-nav">
+                <a href="{{ url_for('privacy') }}" target="_blank">TERMS OF USE / PRIVACY POLICY</a>
+                <a href="mailto:dev.coild+support@gmail.com">CONTACT</a>
+                <a href="{{ url_for('docs') }}" target="_blank">DOCS</a>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Copy code function
+    function copyCode(button) {
+        const codeBlock = button.parentNode;
+        const code = codeBlock.querySelector('code').innerText;
+        
+        navigator.clipboard.writeText(code).then(() => {
+            const notification = document.getElementById('notification');
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.opacity = '1';
+            }, 10);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 300);
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
+    }
+
+    // Initialize all copy buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        const allCopyButtons = document.querySelectorAll('.copy-button');
+        allCopyButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                copyCode(this);
+            });
+        });
+    });
+</script>
+   
+</body>
+</html>

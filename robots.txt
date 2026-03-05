@@ -1,0 +1,14 @@
+# Robots.txt for Dhravani - Speech Corpus Creation Tool
+
+# Allow all crawlers access to most content
+User-agent: *
+Allow: /
+Allow: /static/
+
+# Disallow access to sensitive areas
+Disallow: /auth/
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap location (add your actual sitemap URL if you have one)
+# Sitemap: https://your-domain.com/sitemap.xml

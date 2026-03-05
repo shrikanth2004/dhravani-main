@@ -1,0 +1,288 @@
+.login-page {
+    background-color: #f8f9fa;
+    background-image: radial-gradient(#e8f0fe 1px, transparent 1px);
+    background-size: 20px 20px;
+    min-height: 100vh;
+}
+
+.login-card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.95);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+}
+
+.btn-google {
+    background-color: #fff;
+    border: 1px solid #dadce0;
+    color: #3c4043;
+    font-family: 'Google Sans', sans-serif;
+    font-weight: 500;
+    padding: 8px 24px;
+    border-radius: 24px;
+    transition: all 0.2s ease;
+    width: auto;
+    min-width: 220px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-google:hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: #1a73e8;
+}
+
+.btn-google:active {
+    transform: scale(0.98);
+}
+
+.btn-google:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.app-info {
+    color: #333;
+    font-family: 'Google Sans', sans-serif;
+}
+
+.app-info h2 {
+    font-weight: 700;
+    color: #1a73e8;
+    font-family: 'Google Sans', sans-serif;
+}
+
+.app-info h5 {
+    font-family: 'Google Sans', sans-serif;
+    font-weight: 500;
+}
+
+.app-info p {
+    font-family: 'Google Sans', sans-serif;
+    font-weight: 400;
+}
+
+.login-card-content {
+    font-family: 'Google Sans', sans-serif;
+}
+
+.login-card-content h4 {
+    font-weight: 500;
+    color: #202124;
+}
+
+.login-card-content p {
+    font-weight: 400;
+}
+
+.mobile-header {
+    margin-bottom: 6vh;
+    padding-top: 3vh;
+    animation: fadeSlideDown 0.6s ease;
+}
+
+.mobile-title {
+    color: #1a73e8;
+    font-weight: 700;
+    font-size: 24px;
+    margin-bottom: 0.5rem;
+    font-family: 'Google Sans', sans-serif;
+}
+
+.mobile-subtitle {
+    color: #5f6368;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Google Sans', sans-serif;
+}
+
+.error-message {
+    animation: shake 0.4s ease-in-out;
+    font-family: 'Google Sans', sans-serif;
+    font-weight: 400;
+}
+
+.spinner-border {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+}
+
+.title-container {
+    display: flex;
+    align-items: center;
+    gap: 0px;
+    margin-bottom: -2rem; /* Reduced container bottom margin */
+}
+
+.title-container h2 {
+    margin-bottom: 0; /* Remove extra margin from h2 */
+}
+
+.title-icon {
+    width: auto;
+    height: 80px;
+    margin-bottom: 2.8rem;
+    margin-left: 0px;
+}
+
+@keyframes fadeSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .login-card {
+        margin: 1rem auto;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .login-page {
+        background-size: 15px 15px;
+    }
+
+    .container {
+        padding: 1rem;
+    }
+
+    .mobile-header {
+        margin-bottom: 4vh;
+        padding-top: 2vh;
+    }
+
+    .mobile-title {
+        font-size: 22px;
+    }
+
+    .mobile-subtitle {
+        font-size: 14px;
+    }
+
+    .login-card {
+        margin: 0;
+        padding: 1.5rem !important;
+    }
+}
+
+.footer-row {
+    margin-top: auto;
+    background: #f6f6f6;
+    padding: 1rem 0;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0.1rem;
+}
+
+.footer-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: black;
+}
+
+.footer-logo span {
+    font-size: 0.75rem;
+    font-family: 'Google Sans', sans-serif;
+    font-weight: 600;
+}
+
+.footer-nav {
+    display: flex;
+    gap: 2rem;
+}
+
+.footer-nav a {
+    text-decoration: none;
+    color: black;
+    font-size: 0.75rem;
+    font-family: 'Google Sans', sans-serif;
+    font-weight: 200;
+    transition: color 0.2s ease;
+}
+
+.footer-nav a:hover {
+    color: #1a73e8;
+}
+
+@media (max-width: 768px) {
+    .footer-row {
+        padding: 0.75rem 0;
+        margin-top: 2rem;
+    }
+
+    .footer-content {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .footer-left {
+        gap: 0.75rem;
+    }
+
+    .footer-nav {
+        gap: 1rem;
+    }
+
+    .footer-logo span {
+        display: none;
+    }
+
+    .footer-nav a {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .footer-nav {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+}

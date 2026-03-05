@@ -1,0 +1,963 @@
+body {
+    font-family: 'Google Sans', Arial, sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    overflow-y: hidden;
+}
+
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.form-control {
+    border-radius: 4px;
+    border: 1px solid #dadce0;
+    padding: 8px 8px;
+    height: 40px;
+}
+
+.form-control:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+.btn-primary {
+    background-color: #1a73e8;
+    border-color: #1a73e8;
+}
+
+.btn-primary:hover {
+    background-color: #1557b0;
+    border-color: #1557b0;
+}
+
+.transcript-box {
+    background-color: #f8f9fa;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 16px;  /* Increased from 16px */
+    max-height: calc(100vh - 250px); /* Increased height to fill space */
+    overflow-y: auto;    /* Make scrollable */
+    position: relative;  /* For shadow effect */
+    height: 100%; /* Fill available space */
+    margin: 0; /* Remove margin */
+}
+
+/* Add scroll shadow effect */
+.transcript-box::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.05));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.transcript-box.scrollable::after {
+    opacity: 1;
+}
+
+.page-title {
+    color: #202124;
+    font-size: 22px;
+    margin-bottom: 24px;
+}
+
+/* Update recording-controls for both desktop and mobile */
+.recording-controls {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 24px;  /* Increased padding */
+    margin: 0;  /* Remove all margins */
+    position: fixed;
+    bottom: 0;
+    left: 2.5%; /* Adjusted to align with col-9 (75% width) */
+    width: 70vw;    /* Set width to match col-9 */
+    z-index: 1000; /* Ensure it's above other elements */
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+    margin-top: 0; /* Remove top margin */
+    margin-bottom: 12px;
+    margin-top: auto;
+    padding-top: 16px !important;  /* Add consistent padding for wave container */
+}
+
+.sticky-card {
+    position: sticky;
+    top: 1rem;
+    height: calc(100vh - 2rem);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: 100vh;
+}
+
+.setup-form-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.setup-form-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0px;
+    margin-right: 0px;
+    padding-bottom: 0px;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.setup-form-scroll::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.setup-form-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.setup-form-scroll::-webkit-scrollbar-thumb {
+    background-color: #dadce0;
+    border-radius: 4px;
+}
+
+.setup-form-scroll::-webkit-scrollbar-track {
+    background-color: #f8f9fa;
+}
+
+.main-container {
+    height: auto;
+    overflow: visible;
+    padding-bottom: 80px; /* Adjust based on the height of .recording-controls */
+}
+
+.recording-interface-scroll {
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 5px;
+    padding-bottom: 0;  /* Remove bottom padding */
+    position: relative;  /* Add this */
+    display: flex;
+    flex-direction: column;
+}
+
+.transcript-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2px;  /* Added padding */
+    height: calc(100% - 100px); /* Adjust to leave space for controls */
+    display: flex;
+    flex-direction: column;
+    margin: 0; /* Remove margin */
+}
+
+.transcript-container::-webkit-scrollbar,
+.recording-interface-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.transcript-container::-webkit-scrollbar-thumb,
+.recording-interface-scroll::-webkit-scrollbar-thumb {
+    background-color: #dadce0;
+    border-radius: 4px;
+}
+
+/* Google Material Button Styles */
+.btn {
+    font-family: 'Google Sans', Arial, sans-serif;
+    font-weight: 500;
+    border-radius: 24px;
+    padding: 8px 24px;
+    transition: all 0.2s;
+    text-transform: none;
+    letter-spacing: .25px;
+    height: 36px;
+    font-size: 14px;
+}
+
+.btn:focus {
+    box-shadow: none;
+}
+
+.btn-primary {
+    background-color: #1a73e8;
+    border: none;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #1557b0;
+    box-shadow: 0 1px 2px 0 rgb(60 64 67 / 30%), 0 1px 3px 1px rgb(60 64 67 / 15%);
+}
+
+.btn-danger {
+    background-color: #ea4335;
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #d33828;
+}
+
+.btn-secondary {
+    background-color: #5f6368;
+    border: none;
+}
+
+.btn-success {
+    background-color: #34a853;
+    border: none;
+}
+
+.btn-success:hover {
+    background-color: #2d8745;
+}
+
+.btn-warning {
+    background-color: #fbbc04;
+    border: none;
+    color: #202124;
+}
+
+.btn-warning:hover {
+    background-color: #f29900;
+}
+
+.btn-outline-primary {
+    color: #1a73e8;
+    border-color: #dadce0;
+}
+
+.btn-outline-primary:hover {
+    background-color: #f6fafe;
+    border-color: #1a73e8;
+    color: #1557b0;
+}
+
+.btn-outline-warning {
+    color: #ea8600;
+    border-color: #dadce0;
+}
+
+.btn-outline-warning:hover {
+    background-color: #fff8f0;
+    border-color: #ea8600;
+    color: #ea8600;
+}
+
+.btn-outline-secondary {
+    color: #5f6368;
+    border-color: #dadce0;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    border-color: #5f6368;
+    color: #202124;
+}
+
+.btn-group {
+    gap: 8px;
+}
+
+.btn-group>.btn {
+    border-radius: 24px !important;
+}
+
+.btn:disabled {
+    background-color: #f1f3f4;
+    color: #5f6368;
+    border: none;
+}
+
+/* Input group adjustments */
+.input-group {
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+.input-group .form-control {
+    border-top-left-radius: 24px;
+    border-bottom-left-radius: 24px;
+}
+
+.input-group .btn {
+    border-top-right-radius: 24px !important;
+    border-bottom-right-radius: 24px !important;
+}
+
+/* File Upload Styles */
+.file-upload-container {
+    width: 100%;
+    margin-bottom: 16px; /* Reduced from 24px */
+}
+
+.file-upload-box {
+    position: relative;
+    width: 100%;
+    min-height: 70px; /* Reduced from 80px */
+    border: 2px dashed #dadce0;
+    border-radius: 8px;
+    background: #fff;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.file-upload-box:hover {
+    border-color: #1a73e8;
+    background-color: #f8fafe;
+}
+
+.file-upload-box.drag-over {
+    border-color: #1a73e8;
+    background-color: #f8fafe;
+}
+
+.file-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-content {
+    text-align: center;
+    padding: 8px; /* Reduced from 12px */
+}
+
+.upload-icon {
+    margin-bottom: 8px;
+}
+
+.upload-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.primary-text {
+    color: #1a73e8;
+    font-size: 13px; /* Reduced from 14px */
+    font-weight: 500;
+}
+
+.secondary-text {
+    color: #5f6368;
+    font-size: 11px; /* Reduced from 12px */
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8fafe;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.file-name {
+    color: #202124;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.remove-file {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-file:hover {
+    background-color: #f1f3f4;
+}
+
+/* Material Input Styles */
+.material-input {
+    position: relative;
+    margin-top: 8px;    /* Reduced from 12px */
+    margin-bottom: 4px; /* Reduced from 6px */
+}
+
+.material-input .form-control {
+    height: 48px;
+    padding: 16px 12px 4px;
+    border-radius: 4px;
+    border: 1px solid #dadce0;
+    background: #fff;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.material-input label {
+    position: absolute;
+    left: 12px;
+    top: 16px;
+    color: #5f6368;
+    transition: all 0.2s;
+    background: transparent;
+    pointer-events: none;
+    font-size: 14px;
+}
+
+.material-input .input-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #1a73e8;
+    transform: scaleX(0);
+    transition: transform 0.2s;
+}
+
+/* Active State */
+.material-input .form-control:focus {
+    border-color: #1a73e8;
+    border-width: 2px;
+    box-shadow: none;
+}
+
+.material-input .form-control:focus + label,
+.material-input .form-control:not(:placeholder-shown) + label {
+    top: 6px;
+    font-size: 11px;
+    color: #1a73e8;
+}
+
+.material-input .form-control:focus ~ .input-line {
+    transform: scaleX(1);
+}
+
+/* Error State */
+.material-input .form-control:invalid:not(:focus):not(:placeholder-shown) {
+    border-color: #d93025;
+}
+
+.material-input .form-control:invalid:not(:focus):not(:placeholder-shown) + label {
+    color: #d93025;
+}
+
+/* Hover State */
+.material-input:hover .form-control:not(:focus) {
+    border-color: #202124;
+}
+
+/* Disabled State */
+.material-input .form-control:disabled {
+    background-color: #f1f3f4;
+    border-color: #e8eaed;
+    color: #5f6368;
+}
+
+.material-input .form-control:disabled + label {
+    color: #5f6368;
+}
+
+/* Number Input Specific */
+.material-input input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+.material-input input[type="number"]::-webkit-outer-spin-button,
+.material-input input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Form fields container spacing */
+.form-fields-container {
+    margin-top: -4px; /* Add negative margin to counter first input's margin */
+}
+
+/* Form group spacing */
+.form-group {
+    margin-bottom: 8px; /* Reduced from 12px */
+}
+
+/* Submit button spacing */
+.form-group.mt-3 {
+    margin-top: 12px !important; /* Reduced from default bootstrap mt-3 (1rem/16px) */
+}
+
+/* Add shadow on scroll */
+.setup-form-scroll.scrolled {
+    box-shadow: inset 0 -10px 10px -10px rgba(0,0,0,0.1);
+}
+
+/* Empty state styling */
+.empty-state {
+    padding: 48px 24px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px dashed #dadce0;
+    position: relative;
+    z-index: 4;
+}
+
+.empty-state img {
+    opacity: 0.7;
+}
+
+/* Settings panel adjustments */
+#settingsPanel {
+    transition: transform 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+/* Badge styling */
+.badge {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.badge.bg-primary {
+    background-color: #e8f0fe !important;
+    color: #1a73e8;
+}
+
+/* Update Recording Interface z-index */
+#recordingInterface {
+    position: relative;
+    z-index: 2;
+}
+
+/* Disabled Interface State */
+.disabled-interface {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.disabled-interface::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:#f8f9fa;
+    z-index: 3;
+    border-radius: 8px;
+    backdrop-filter: blur(2px);
+}
+
+/* Requirements List Styling */
+.requirements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    text-align: left;
+    padding: 0 24px;
+}
+
+.requirement {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #5f6368;
+    font-size: 14px;
+}
+
+.requirement .icon {
+    font-size: 8px;
+    color: #dadce0;
+}
+
+requirement.complete {
+    color: #34a853;
+}
+
+requirement.complete .icon {
+    color: #34a853;
+}
+
+requirement.incomplete {
+    color: #ea4335;
+}
+
+requirement.incomplete .icon {
+    color: #ea4335;
+}
+
+/* Modal Styles */
+.modal-content {
+    font-family: 'Google Sans', Arial, sans-serif;
+}
+
+.modal-header .btn-close {
+    padding: 8px;
+    margin: -8px -8px -8px auto;
+}
+
+.modal-header .btn-close:hover {
+    background-color: #f1f3f4;
+    border-radius: 50%;
+}
+
+.modal.fade.show {
+    background-color: rgba(32, 33, 36, 0.6);
+}
+
+.modal-backdrop.show {
+    opacity: 0;
+}
+
+.modal .btn {
+    min-width: 96px;
+}
+
+/* Font Size Control Styles */
+.font-size-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f1f3f4;
+    padding: 2px 0px;
+    border-radius: 16px;
+}
+
+.font-size-control .btn-icon {
+    padding: 4px 8px;
+    height: auto;
+    min-width: 32px;
+    background: none;
+    color: #5f6368;
+    font-weight: 600;
+}
+
+.font-size-control .btn-icon:hover {
+    background: #e8eaed;
+    color: #202124;
+}
+
+#fontSizeDisplay {
+    min-width: 24px;
+    text-align: center;
+    color: #5f6368;
+    font-size: 14px;
+}
+
+/* Update transcript text for better readability */
+#currentTranscript {
+    font-size: var(--transcript-font-size, 16px);
+    transition: font-size 0.2s ease;
+}
+
+/* Toast Styling */
+.toast-container {
+    z-index: 1050;
+}
+
+.toast {
+    background: white;
+    border: none;
+    box-shadow: 0 2px 6px rgba(60, 64, 67, 0.15);
+    border-radius: 8px;
+    min-width: 300px;
+}
+
+.toast.info .toast-header {
+    color: #1a73e8;
+    border-bottom-color: #e8f0fe;
+    background-color: #e8f0fe;
+}
+
+.toast.success .toast-header {
+    color: #34a853;
+    border-bottom-color: #e6f4ea;
+    background-color: #e6f4ea;
+}
+
+.toast.error .toast-header {
+    color: #ea4335;
+    border-bottom-color: #fce8e6;
+    background-color: #fce8e6;
+}
+
+.toast.warning .toast-header {
+    color: #fbbc04;
+    border-bottom-color: #fef7e0;
+    background-color: #fef7e0;
+}
+
+.toast-icon {
+    margin-right: 8px;
+    width: 20px;
+    height: 20px;
+}
+
+.toast-header {
+    padding: 12px 16px;
+    align-items: center;
+}
+
+.toast-body {
+    padding: 12px 16px;
+    color: #5f6368;
+}
+
+/* Add to existing styles */
+.auth-required {
+    background: rgba(255, 255, 255, 0.9);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.auth-message {
+    text-align: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(60, 64, 67, 0.15);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    background: #f8f9fa;
+    border-radius: 24px;
+    margin-left: auto;
+}
+
+.user-email {
+    color: #5f6368;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Wave container styles */
+.wave-container {
+    width: 60vw;  /* 60% of viewport width for desktop */
+    height: 32px;
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translate(-50%, -100%);  /* Center horizontally and move up */
+    background: transparent;
+    border-radius: 0;
+    overflow: visible;
+    display: none;
+    transition: width 0.3s ease;
+}
+
+.wave-container.recording {
+    display: block;
+}
+
+.wave-container.canvas {
+    width: 100% !important;  /* Make canvas fill container */
+    height: 32px !important;
+}
+
+/* Override Bootstrap's default p-4 */
+.card-body.setup-form-container {
+    padding: 16px !important;
+}
+
+.card-body.recording-interface-scroll {
+    padding: 16px !important;
+}
+
+/* Add these new styles */
+.row.g-3 {
+    margin-left: -8px;
+    margin-right: -8px;
+}
+
+.row.g-3 > .col-6 {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.row.g-3 .material-input {
+    margin-top: 0;
+}
+
+/* Add any necessary styles for the dropdown menus */
+.material-input select.form-control {
+    background-color: #fff;
+    /* Add more styles as needed */
+}
+
+/* Consent Checkbox Styles */
+.material-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.material-checkbox input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #5f6368;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.material-checkbox input[type="checkbox"]:checked {
+    background-color: #1a73e8;
+    border-color: #1a73e8;
+}
+
+.material-checkbox input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.material-checkbox label {
+    color: #5f6368;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.material-checkbox a {
+    color: #1a73e8;
+    text-decoration: none;
+}
+
+.material-checkbox a:hover {
+    text-decoration: underline;
+}
+
+/* Filter form responsive styles */
+#filterForm {
+    width: 100%;
+}
+
+#filterForm .filter-select {
+    position: relative;
+}
+
+#filterForm .select-arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #5f6368;
+}
+
+/* Ensure filter items stay in one row on mobile */
+@media (max-width: 575.98px) {
+    #filterForm.row {
+        margin-right: -5px;
+        margin-left: -5px;
+    }
+    
+    #filterForm .col, 
+    #filterForm .col-auto {
+        padding-right: 5px;
+        padding-left: 5px;
+    }
+
+    #filterForm .btn-primary {
+        padding-left: 16px;
+        padding-right: 16px;
+        white-space: nowrap;
+    }
+
+    .filter-title {
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+}
+
+/* Add these styles for the recording indicator */
+.recording-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: #fff;
+  border-radius: 50%;
+  margin-right: 8px;
+  position: relative;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+/* Add some styling for the recording button state */
+.btn.is-recording {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn.is-recording::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  animation: recording-pulse 2s infinite;
+}
+
+@keyframes recording-pulse {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+

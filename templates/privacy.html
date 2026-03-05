@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Privacy Policy and Terms of Use for COILD DHRAVANI, a web-based application for speech corpus creation. Learn about data collection, usage, and your rights as a participant.">
+    <title>Terms of Use & Privacy Policy - Dhravani</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='privacy.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body class="privacy-page">
+    <div class="container d-flex flex-column min-vh-100">
+        <div class="row flex-grow-1">
+            <div class="col-12">
+                <div class="content-wrapper">
+                    <div class="title-section">
+                        <h1>Terms of Use & Privacy Policy</h1>
+                        <p class="last-updated">Last Updated: January 25, 2025</p>
+                    </div>
+
+                    <div class="content-section">
+                        <section>
+                            <h2>Research Project Details</h2>
+                            <div class="project-info">
+                                <p><strong>Project Name:</strong> COILD DHRAVANI</p>
+                                <p><strong>Principal Investigator:</strong> abcd</p>
+                                <p><strong>Designation:</strong> xyz</p>
+                                <p><strong>Contact Information:</strong> 123456789-0</p>
+                            </div>
+                        </section>
+
+                        <section>
+                            <h2>Introduction</h2>
+                            <p>This Privacy Policy outlines how COILD DHRAVANI ("we", "our", or "us") collects, uses, and protects your information when you participate in our speech corpus creation project for Automatic Speech Recognition (ASR).</p>
+                        </section>
+
+                        <!-- Additional sections following the same pattern -->
+                        <section>
+                            <h2>Service Description</h2>
+                            <p>DHRAVANI is a web-based application developed under the "Center of Indian Language Data" project, designed for creating a speech corpus for ASR. The platform facilitates recording, managing, and organizing voice recordings with their corresponding transcriptions.</p>
+                        </section>
+
+                        <section>
+                            <h2>Information Collection</h2>
+                            <div class="sub-section">
+                                <h3>Voice Recordings</h3>
+                                <p>When you participate, your voice recordings are collected and stored. These may be used for research, development, and commercial purposes.</p>
+                                
+                                <h3>Demographic Information</h3>
+                                <ul>
+                                    <li>Age group</li>
+                                    <li>Gender</li>
+                                    <li>Location</li>
+                                    <li>Accent information</li>
+                                </ul>
+                                
+                                <h3>Account Information</h3>
+                                <p>Google account authentication is required for participation.</p>
+                            </div>
+                        </section>
+
+                        <section>
+                            <h2>Usage Instructions</h2>
+                            <ol>
+                                <li>Sign in with your Google account</li>
+                                <li>Upload your transcript CSV file (csv header must be transcript or transcript_${lang_code})</li>
+                                <li>Select the language, location, gender, age group, and accent</li>
+                                <li>Click "Start Session" to begin recording</li>
+                                <li>Record by reading the transcript aloud</li>
+                                <li>Maximum recording duration is 30 seconds</li>
+                                <li>Option to re-record if audio is not properly captured</li>
+                            </ol>
+                        </section>
+
+                        <!-- Additional sections... -->
+
+                        <section class="consent-section">
+                            <h2>Consent Declaration</h2>
+                            <p>By participating in this study, you acknowledge that:</p>
+                            <ul>
+                                <li>You have read and understood this Privacy Policy</li>
+                                <li>Your participation is entirely voluntary</li>
+                                <li>You can withdraw at any time without providing a reason</li>
+                                <li>Your contributions will be licensed under CC0</li>
+                            </ul>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer (same as login page) -->
+        <div class="row footer-row">
+            <div class="col-12">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <a href="https://github.com/COILDOrg" class="footer-logo github">
+                            <img src="{{ url_for('static', filename='gh-logo.svg') }}" alt="GitHub Logo" width="24" height="24">
+                            <span>GitHub</span>
+                        </a>
+                        <a href="https://huggingface.co/coild" class="footer-logo huggingface">
+                            <img src="{{ url_for('static', filename='hf-logo.svg') }}" alt="Hugging Face Logo" width="24" height="24">
+                            <span>Hugging Face</span>
+                        </a>
+                    </div>
+                    <nav class="footer-nav">
+                        <a href="">TERMS OF USE / PRIVACY POLICY</a>
+                        <a href="mailto:dev.coild+support@gmail.com">CONTACT</a>
+                        <a href="{{ url_for('docs') }}">DOCS</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
