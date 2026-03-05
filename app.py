@@ -105,6 +105,7 @@ app.config['COMPRESS_MIMETYPES'] = [
 app.config['COMPRESS_LEVEL'] = 6  # Higher level = better compression but more CPU
 app.config['COMPRESS_MIN_SIZE'] = 500  # Only compress files larger than 500 bytes
 # app.config['POCKETBASE_URL'] = "http://127.0.0.1:8090"
+POCKETBASE_URL = os.getenv('POCKETBASE_URL', 'http://127.0.0.1:8090')
 
 # Use environment variable for secret key, falling back to generated one only if needed
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
