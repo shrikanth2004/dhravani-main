@@ -22,6 +22,4 @@ psycopg2-binary
 psutil
 PyJWT
 flask-compress
-Flask-Login
-torch
-transformers
+flask_login

@@ -1,17 +1,3 @@
-import os
-import ctypes
-import platform
-os.environ['TRANSFORMERS_OFFLINE'] = '1'
-os.environ['HF_HUB_OFFLINE'] = '1'
-
-if platform.system() == "Windows":
-    try:
-        dll_path = r"C:\Users\HP\OneDrive\Downloads\Dhravani-updated-main\venv\lib\site-packages\torch\lib\c10.dll"
-        ctypes.CDLL(dll_path)
-    except Exception:
-        pass
-
-
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory, redirect, url_for, session, abort, make_response, Response
 from flask_login import login_required
 from prepare_dataset import AudioDatasetPreparator, should_save_locally
@@ -104,8 +90,6 @@ app.config['COMPRESS_MIMETYPES'] = [
 ]
 app.config['COMPRESS_LEVEL'] = 6  # Higher level = better compression but more CPU
 app.config['COMPRESS_MIN_SIZE'] = 500  # Only compress files larger than 500 bytes
-# app.config['POCKETBASE_URL'] = "http://127.0.0.1:8090"
-POCKETBASE_URL = os.getenv('POCKETBASE_URL', 'http://127.0.0.1:8090')
 
 # Use environment variable for secret key, falling back to generated one only if needed
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
@@ -305,7 +289,7 @@ def auth_callback():
 def login():
     return render_template('login.html', 
                          config={
-                             'POCKETBASE_URL': os.getenv('POCKETBASE_URL', 'http://127.0.0.1:8090')
+                             'POCKETBASE_URL': os.getenv('POCKETBASE_URL')
                          })
 
 @app.route('/')
@@ -1061,7 +1045,7 @@ if __name__ == "__main__":
         # Just use the port from environment
         port = int(os.getenv('FLASK_PORT', 5000))
         from waitress import serve
-        serve(app, host="0.0.0.0", port=port)
+        serve(app, host="127.0.0.1", port=port)
         
     except Exception as e:
         logger.error(f"Startup error: {e}")

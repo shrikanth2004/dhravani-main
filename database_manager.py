@@ -10,8 +10,9 @@ from domain_subdomain import domains_and_subdomains  # Import domain data
 
 logger = logging.getLogger(__name__)
 
-DATABASE_URL = "postgresql://shreesha:shreesha12@localhost:5432/dhravani_db"
-
+DATABASE_URL = os.getenv("POSTGRES_URL")
+if not DATABASE_URL:
+    raise Exception("POSTGRES_URL environment variable not set")
 
 engine = create_engine(DATABASE_URL)
 metadata_db = MetaData()  # Removed bind parameter

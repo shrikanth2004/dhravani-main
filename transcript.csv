@@ -1,3 +1,6 @@
 transcript
 "First sentence to record"
 "Second sentence to record"
+# For multi-language support:
+transcript_en,transcript_es
+"English sentence","Spanish sentence"   

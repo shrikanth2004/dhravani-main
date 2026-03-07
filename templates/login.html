@@ -2,13 +2,16 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Login to Dhravani - A speech corpus creation tool. Developed as part of the funded project Center of Indian Language Data.">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Login to Dhravani - A speech corpus creation tool. Developed as part of the funded project Center of Indian Language Data.">
     <title>Dhravani - Dataset Preparation Interface</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" as="style">
+    <!-- Preload fonts for better performance -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap"
+        as="style">
     <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
     <script src="https://unpkg.com/pocketbase@0.18.0/dist/pocketbase.umd.js"></script>
 </head>
@@ -34,11 +37,13 @@
                     </p>
                 </div>
             </div>
-
             <div class="col-11 col-sm-8 col-md-6 col-lg-4 col-xl-3">
-                <div class="d-block d-lg-none mobile-header text-center">
-                    <h2 class="mobile-title mb-2">Dhravani</h2>
-                    <h3 class="mobile-subtitle">Speech Corpus Creation Tool</h3>
+                <!-- Mobile title - moved above login card with adjusted spacing -->
+                <div class="d-block d-lg-none mobile-header">
+                    <div class="text-center">
+                        <h2 class="mobile-title mb-2">Dhravani</h2>
+                        <h3 class="mobile-subtitle">Speech Corpus Creation Tool</h3>
+                    </div>
                 </div>
 
                 <div class="card login-card">
@@ -47,25 +52,21 @@
                             <h4 class="mb-2">Sign In</h4>
                             <p class="text-muted mb-4">to continue to Dhravani</p>
                         </div>
-
                         <div id="error-message" class="alert alert-danger" style="display: none;"></div>
-
-                        <form id="emailLoginForm">
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" id="email" class="form-control" required />
-                            </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" id="password" class="form-control" required />
-                            </div>
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Login</button>
-                            </div>
-                        </form>
+                        <div class="d-flex justify-content-center">
+                            <button id="googleLoginBtn" class="btn btn-google" disabled>
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <div class="spinner-border spinner-border-sm me-2 d-none" role="status"></div>
+                                    <img src="{{ url_for('static', filename='google-icon.svg') }}" alt="Google"
+                                        width="18" height="18" class="me-2 btn-icon">
+                                    <span>Sign in with Google</span>
+                                </div>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Mobile description -->
                 <div class="d-block d-lg-none mt-4 text-center">
                     <p class="text-muted">
                         A speech corpus creation tool for Automatic Speech Recognition (ASR),
@@ -75,16 +76,19 @@
             </div>
         </div>
 
+        <!-- Integrated footer -->
         <div class="row footer-row">
             <div class="col-12">
                 <div class="footer-content">
                     <div class="footer-left">
                         <a href="https://github.com/COILDOrg" class="footer-logo github" target="_blank">
-                            <img src="{{ url_for('static', filename='gh-logo.svg') }}" alt="GitHub Logo" width="24" height="24">
+                            <img src="{{ url_for('static', filename='gh-logo.svg') }}" alt="GitHub Logo" width="24"
+                                height="24">
                             <span>GitHub</span>
                         </a>
                         <a href="https://huggingface.co/coild" class="footer-logo huggingface" target="_blank">
-                            <img src="{{ url_for('static', filename='hf-logo.svg') }}" alt="Hugging Face Logo" width="24" height="24">
+                            <img src="{{ url_for('static', filename='hf-logo.svg') }}" alt="Hugging Face Logo"
+                                width="24" height="24">
                             <span>Hugging Face</span>
                         </a>
                     </div>
@@ -97,55 +101,78 @@
             </div>
         </div>
     </div>
-<script>
-    // 1. Fix the "None" URL by adding a hardcoded fallback
-    const configUrl = '{{ config.POCKETBASE_URL }}';
-    const baseUrl = (configUrl && configUrl !== 'None') ? configUrl : 'http://127.0.0.1:8090';
-    
-    const pb = new PocketBase(baseUrl);
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const loginForm = document.getElementById('emailLoginForm');
-        const errorMsg = document.getElementById('error-message');
+    <script>
+const baseUrl = '{{ config.POCKETBASE_URL }}';
+const pb = new PocketBase(baseUrl);
 
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
+document.addEventListener('DOMContentLoaded', () => {
+    const loginBtn = document.getElementById('googleLoginBtn');
+    const spinner = loginBtn.querySelector('.spinner-border');
+    const icon = loginBtn.querySelector('.btn-icon');
 
-            try {
-                // 2. Authenticate with PocketBase
-                const authData = await pb.collection('users').authWithPassword(email, password);
+    loginBtn.disabled = false;
 
-                // 3. Send the token back to your Flask server
-                const response = await fetch('/auth/callback', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        token: pb.authStore.token,
-                        user: pb.authStore.model
-                    })
-                });
+    loginBtn.addEventListener('click', async () => {
+        try {
+            loginBtn.disabled = true;
+            spinner.classList.remove('d-none');
+            icon.classList.add('d-none');
 
-                if (!response.ok) throw new Error('Flask server rejected the session');
+            // Clear any existing auth
+            pb.authStore.clear();
 
-                window.location.replace('/');
-
-            } catch (err) {
-                console.error('Login Error:', err);
-                
-                // Friendly error message for the "Error 0" (CSP/Blocked) issue
-                if (err.status === 0) {
-                    errorMsg.textContent = 'Login failed: Connection blocked by browser security or PocketBase is offline.';
-                } else {
-                    errorMsg.textContent = 'Login failed: ' + err.message;
-                }
-                
-                errorMsg.style.display = 'block';
+            // Authenticate with Google via OAuth2
+            const authData = await pb.collection("users").authWithOAuth2({ provider: "google" });
+            
+            // Get the token from PocketBase auth store
+            const token = pb.authStore.token;
+            const user = pb.authStore.model;
+            
+            if (!token || !user) {
+                throw new Error("Failed to get authentication data");
             }
-        });
+            
+            console.log("OAuth successful, user:", user.email);
+            
+            // Send the auth data to our server callback
+            const response = await fetch('/auth/callback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    token: token,
+                    user: user
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Authentication callback failed');
+            }
+            
+            console.log("Auth callback successful, redirecting...");
+            
+            // Redirect to home page after successful login
+            window.location.href = '/';
+
+        } catch (error) {
+            console.error("Login error:", error);
+
+            loginBtn.disabled = false;
+            spinner.classList.add('d-none');
+            icon.classList.remove('d-none');
+
+            const errorMsg = document.getElementById('error-message');
+            errorMsg.textContent = "Login failed. Please try again.";
+            errorMsg.style.display = "block";
+        }
     });
+});
 </script>
+
+  
 </body>
 
 </html>
