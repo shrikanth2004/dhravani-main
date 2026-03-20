@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: dhravani
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your_secure_postgres_password_here
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    # No ports exposed externally for security
+
+  pocketbase:
+    image: ghcr.io/muchobien/pocketbase:latest
+    restart: always
+    ports:
+      - "8090:8090"
+    volumes:
+      - pocketbase_data:/pb_data
+    environment:
+      - POCKETBASE_PUBLIC_URL=http://YOUR_DOMAIN:8090
+    networks:
+      - app-network
+    depends_on:
+      - postgres
+
+  app:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    restart: always
+    ports:
+      - "80:5000"  # Main app on port 80
+    volumes:
+      - datasets:/app/datasets
+      - ./static:/app/static:ro  # Static files
+    environment:
+      - FLASK_SECRET_KEY=your_flask_secret_key_here_change_this
+      - ENABLE_AUTH=true
+      - POCKETBASE_URL=http://pocketbase:8090
+      - POSTGRES_URL=postgresql://postgres:your_secure_postgres_password_here@postgres:5432/dhravani
+      - SAVE_LOCALLY=true
+      - FLASK_PORT=5000
+    networks:
+      - app-network
+    depends_on:
+      - postgres
+      - pocketbase
+
+volumes:
+  postgres_data:
+  pocketbase_data:
+  datasets:
+
+networks:
+  app-network:
+    driver: bridge
+
+# Run with: docker-compose up -d
+# Logs: docker-compose logs -f
+# Stop: docker-compose down

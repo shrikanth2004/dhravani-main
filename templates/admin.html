@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
     <!-- Preconnect to required origins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-        
+
     <title>Admin Dashboard - COILD Dhravani</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -18,6 +19,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
     <meta name="csrf-token" content="{{ session['csrf_token'] }}">
 </head>
+
 <body>
     <div class="container-fluid px-3">
         <div class="d-flex justify-content-between align-items-center pt-3 pb-3">
@@ -36,7 +38,7 @@
         {% if pb_user %}
         <div class="alert alert-info mb-3">
             <p class="mb-0">
-                <i class="fas fa-user-shield"></i> 
+                <i class="fas fa-user-shield"></i>
                 Admin: {{ pb_user.name or pb_user.email }} ({{ pb_user.email }})
             </p>
         </div>
@@ -97,7 +99,8 @@
                                 <td>{{ lang_stats.available_transcripts }}</td>
                                 <td>{{ lang_stats.recordings }}</td>
                                 <td>{{ "%.1f"|format(lang_stats.total_duration / 3600) }}</td>
-                                <td>{{ "%.1f"|format(100 * lang_stats.verified / lang_stats.recordings if lang_stats.recordings > 0 else 0) }}%</td>
+                                <td>{{ "%.1f"|format(100 * lang_stats.verified / lang_stats.recordings if
+                                    lang_stats.recordings > 0 else 0) }}%</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -119,12 +122,9 @@
                         Add/Remove Moderator
                     </h3>
                     <div class="input-group">
-                        <input type="email" 
-                               id="searchEmail" 
-                               class="form-control" 
-                               placeholder="Enter email addresses (comma-separated)..."
-                               multiple
-                               title="Enter one or more email addresses, separated by commas">
+                        <input type="email" id="searchEmail" class="form-control"
+                            placeholder="Enter email addresses (comma-separated)..." multiple
+                            title="Enter one or more email addresses, separated by commas">
                         <button class="btn btn-outline-primary" id="searchButton">
                             <i class="fas fa-search"></i> Search
                         </button>
@@ -189,26 +189,8 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        
-                        <!-- Add Domain Selection -->
-                        <div class="domain-select mt-3">
-                            <label for="domain" class="form-label">Select domain</label>
-                            <select id="domain" name="domain" class="form-control" required>
-                                {% for code, name in domains.items() %}
-                                <option value="{{ code }}" {% if code == "GEN" %}selected{% endif %}>{{ name }} ({{ code }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <!-- Add Subdomain Selection -->
-                        <div class="subdomain-select mt-3">
-                            <label for="subdomain" class="form-label">Select subdomain</label>
-                            <select id="subdomain" name="subdomain" class="form-control" required disabled>
-                                <!-- Placeholder will be replaced by JavaScript -->
-                                <option value="">Loading...</option>
-                            </select>
-                        </div>
-                    </div>
+
+
 
                     <div class="form-section">
                         <h2 class="section-title">
@@ -219,7 +201,8 @@
                             <i class="fas fa-cloud-upload-alt upload-icon"></i>
                             <h5>Drop your file here or click to browse</h5>
                             <p class="text-muted">Supported formats: .txt, .csv</p>
-                            <input type="file" name="fileInput" id="fileInput" accept=".txt,.csv" style="display: none;">
+                            <input type="file" name="fileInput" id="fileInput" accept=".txt,.csv"
+                                style="display: none;">
                             <div id="uploadProgress" class="progress" style="display: none;">
                                 <div class="progress-bar" role="progressbar" style="width: 0%"></div>
                             </div>
@@ -241,10 +224,9 @@
                                 Words: <span id="wordCount">0</span>
                             </span>
                         </div>
-                        <textarea id="transcription_text" name="transcription_text" 
-                                class="form-control" rows="10" required
-                                placeholder="Transcription text will appear here..."
-                                onchange="updateCounts(this.value)"></textarea>
+                        <textarea id="transcription_text" name="transcription_text" class="form-control" rows="10"
+                            required placeholder="Transcription text will appear here..."
+                            onchange="updateCounts(this.value)"></textarea>
                     </div>
 
                     <div class="action-buttons">
@@ -278,7 +260,8 @@
                             <i class="fas fa-info-circle"></i>
                             <div class="alert-content">
                                 <h3 class="alert-heading">About Dataset Sync</h3>
-                                <p class="mb-0">This will synchronize all verified recordings and their metadata to Hugging Face. The process includes:</p>
+                                <p class="mb-0">This will synchronize all verified recordings and their metadata to
+                                    Hugging Face. The process includes:</p>
                                 <ul class="sync-details">
                                     <li>Updating Parquet metadata files</li>
                                     <li>Syncing verified audio recordings</li>
@@ -316,60 +299,6 @@
         const adminForm = document.getElementById('adminForm');
         const uploadProgress = document.getElementById('uploadProgress');
         const dropArea = document.getElementById('dropArea');
-        const domainSelect = document.getElementById('domain');
-        const subdomainSelect = document.getElementById('subdomain');
-
-        // Function to load subdomains for a domain
-        async function loadSubdomains(domainCode) {
-            subdomainSelect.innerHTML = '<option value="">Loading...</option>';
-            subdomainSelect.disabled = true;
-            
-            if (!domainCode) {
-                // If no domain code, set GEN as default
-                domainSelect.value = 'GEN';
-                domainCode = 'GEN';
-            }
-            
-            try {
-                const response = await fetch(`/admin/subdomains/${domainCode}`);
-                const data = await response.json();
-                
-                if (data.subdomains && Array.isArray(data.subdomains)) {
-                    // Clear dropdown
-                    subdomainSelect.innerHTML = '';
-                    
-                    data.subdomains.forEach(subdomain => {
-                        const option = document.createElement('option');
-                        option.value = subdomain.mnemonic;
-                        option.textContent = `${subdomain.name} (${subdomain.mnemonic})`;
-                        
-                        // Auto-select GEN subdomain
-                        if (subdomain.mnemonic === 'GEN') {
-                            option.selected = true;
-                        }
-                        
-                        subdomainSelect.appendChild(option);
-                    });
-                    
-                    subdomainSelect.disabled = false;
-                    
-                    // If no option is selected, select the first one
-                    if (!subdomainSelect.value && subdomainSelect.options.length > 0) {
-                        subdomainSelect.options[0].selected = true;
-                    }
-                } else {
-                    subdomainSelect.innerHTML = '<option value="">No subdomains available</option>';
-                }
-            } catch (error) {
-                console.error('Error fetching subdomains:', error);
-                subdomainSelect.innerHTML = '<option value="">Error loading subdomains</option>';
-            }
-        }
-
-        // Add domain change handler to update subdomains
-        domainSelect.addEventListener('change', function() {
-            loadSubdomains(this.value);
-        });
 
         // Add click handler for the drop area
         dropArea.addEventListener('click', () => {
@@ -379,14 +308,14 @@
         function updateCounts(text) {
             const lines = text.split('\n').filter(line => line.trim().length > 0);
             const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-            
+
             document.getElementById('lineCount').textContent = lines.length;
             document.getElementById('wordCount').textContent = words.length;
         }
 
-        fileInput.addEventListener('change', function() {
+        fileInput.addEventListener('change', function () {
             const file = this.files[0];
-            if(file) {
+            if (file) {
                 handleFileUpload(file);
             }
         });
@@ -422,7 +351,7 @@
         function handleDrop(e) {
             const dt = e.dataTransfer;
             const file = dt.files[0];
-            
+
             if (file) {
                 const fileType = file.name.split('.').pop().toLowerCase();
                 if (['txt', 'csv'].includes(fileType)) {
@@ -436,7 +365,7 @@
 
         function handleFileUpload(file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 const content = e.target.result;
                 transcriptionText.value = content;
                 updateCounts(content);
@@ -447,41 +376,41 @@
         }
 
         // Add listener for manual text changes
-        transcriptionText.addEventListener('input', function() {
+        transcriptionText.addEventListener('input', function () {
             updateCounts(this.value);
         });
 
-        adminForm.addEventListener('submit', async function(e) {
+        adminForm.addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             const submitButton = document.getElementById('submitButton');
             const uploadLoading = document.getElementById('uploadLoading');
-            
+
             // Disable submit button and show loading
             submitButton.disabled = true;
             uploadLoading.style.display = 'flex';
-            
+
             // Create new FormData and explicitly add the textarea content
             const formData = new FormData();
             formData.append('language', document.getElementById('language').value);
-            formData.append('domain', document.getElementById('domain').value);
-            formData.append('subdomain', document.getElementById('subdomain').value);
             formData.append('transcription_text', transcriptionText.value);
-            
+
             // Include the file if one was selected
             const fileInputElement = document.getElementById('fileInput');
             if (fileInputElement.files.length > 0) {
                 formData.append('fileInput', fileInputElement.files[0]);
             }
-            
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            formData.append('csrf_token', csrfToken);
+
             try {
                 const response = await fetch('/admin/submit', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const result = await response.json();
-                if(response.ok) {
+                if (response.ok) {
                     alert(`Transcriptions uploaded successfully!\nLines: ${document.getElementById('lineCount').textContent}\nWords: ${document.getElementById('wordCount').textContent}`);
                     uploadProgress.style.display = 'none';
                     transcriptionText.value = '';
@@ -491,7 +420,7 @@
                 } else {
                     throw new Error(result.error || 'Upload failed');
                 }
-            } catch(error) {
+            } catch (error) {
                 alert('Error: ' + error.message);
             } finally {
                 // Re-enable submit button and hide loading
@@ -506,7 +435,7 @@
                 const data = await response.json();
                 const tbody = document.querySelector('#moderatorsTable tbody');
                 tbody.innerHTML = '';
-                
+
                 if (data.users.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="3" class="text-center">No moderators found</td></tr>';
                     return;
@@ -528,8 +457,8 @@
 
                 // Add event listeners for remove buttons
                 document.querySelectorAll('.remove-mod').forEach(btn => {
-                    btn.addEventListener('click', async function() {
-                        if(confirm('Remove moderator privileges from this user?')) {
+                    btn.addEventListener('click', async function () {
+                        if (confirm('Remove moderator privileges from this user?')) {
                             await updateUserRole(this.dataset.userId, 'user');
                             loadModerators();
                         }
@@ -542,15 +471,17 @@
 
         async function updateUserRole(userId, newRole) {
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 const response = await fetch(`/admin/users/${userId}/role`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-CSRF-Token': csrfToken
                     },
                     body: JSON.stringify({ role: newRole })
                 });
-                
+
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     throw new Error('Server response was not JSON');
@@ -560,7 +491,7 @@
                 if (!response.ok) {
                     throw new Error(result.error || 'Failed to update role');
                 }
-                
+
                 await loadModerators();
                 return true;
             } catch (error) {
@@ -571,7 +502,7 @@
         }
 
         // Add search functionality
-        document.getElementById('searchButton').addEventListener('click', async function() {
+        document.getElementById('searchButton').addEventListener('click', async function () {
             const emailInput = document.getElementById('searchEmail').value.trim();
             if (!emailInput) {
                 alert('Please enter at least one email address');
@@ -595,11 +526,11 @@
             try {
                 const response = await fetch(`/admin/users/search?email=${encodeURIComponent(emailInput)}`);
                 const data = await response.json();
-                
+
                 const resultsDiv = document.getElementById('searchResults');
                 const tbody = resultsDiv.querySelector('tbody');
                 tbody.innerHTML = '';
-                
+
                 if (data.users.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" class="text-center">No users found</td></tr>';
                 } else {
@@ -607,37 +538,37 @@
                         const tr = document.createElement('tr');
                         const isModerator = user.role === 'moderator';
                         const isAdmin = user.role === 'admin';
-                        
+
                         tr.innerHTML = `
                             <td>${user.email}</td>
                             <td>${user.name || 'N/A'}</td>
                             <td>${user.role}</td>
                             <td>
-                                ${isAdmin ? 
-                                    '<span class="text-muted">Admin - No Action Available</span>' :
-                                    `<button class="btn btn-sm ${isModerator ? 'btn-warning' : 'btn-primary'} toggle-role" 
+                                ${isAdmin ?
+                                '<span class="text-muted">Admin - No Action Available</span>' :
+                                `<button class="btn btn-sm ${isModerator ? 'btn-warning' : 'btn-primary'} toggle-role" 
                                         data-user-id="${user.id}" 
                                         data-current-role="${user.role}">
                                         ${isModerator ? 'Remove Moderator' : 'Make Moderator'}
                                     </button>`
-                                }
+                            }
                             </td>
                         `;
                         tbody.appendChild(tr);
                     });
                 }
-                
+
                 resultsDiv.style.display = 'block';
 
                 // Add event listeners for role toggle buttons
                 document.querySelectorAll('.toggle-role').forEach(btn => {
-                    btn.addEventListener('click', async function() {
+                    btn.addEventListener('click', async function () {
                         const userId = this.dataset.userId;
                         const currentRole = this.dataset.currentRole;
                         const newRole = currentRole === 'moderator' ? 'user' : 'moderator';
                         const action = newRole === 'moderator' ? 'make this user a moderator' : 'remove moderator privileges';
-                        
-                        if(confirm(`Are you sure you want to ${action}?`)) {
+
+                        if (confirm(`Are you sure you want to ${action}?`)) {
                             await updateUserRole(userId, newRole);
                             loadModerators();
                             // Refresh the search results
@@ -653,7 +584,7 @@
 
         // Update the click handlers to use async/await
         document.querySelectorAll('.make-mod').forEach(btn => {
-            btn.addEventListener('click', async function() {
+            btn.addEventListener('click', async function () {
                 if (confirm('Make this user a moderator?')) {
                     const success = await updateUserRole(this.dataset.userId, 'moderator');
                     if (success) {
@@ -665,7 +596,7 @@
         });
 
         document.querySelectorAll('.remove-mod').forEach(btn => {
-            btn.addEventListener('click', async function() {
+            btn.addEventListener('click', async function () {
                 if (confirm('Remove moderator privileges from this user?')) {
                     await updateUserRole(this.dataset.userId, 'user');
                 }
@@ -673,47 +604,40 @@
         });
 
         // Load moderators when page loads
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', async function () {
             loadModerators();
-            
-            // Load default subdomains for selected domain (should be GEN by default)
-            if (domainSelect.value) {
-                await loadSubdomains(domainSelect.value);
-            } else {
-                // Fallback to GEN if no domain is selected
-                domainSelect.value = 'GEN';
-                await loadSubdomains('GEN');
-            }
         });
 
         // Add Dataset Sync Handler
-        document.getElementById('syncButton').addEventListener('click', async function() {
+        document.getElementById('syncButton').addEventListener('click', async function () {
             try {
                 const button = this;
                 const statusDiv = document.getElementById('syncStatus');
-                
+
                 // Check if sync is already running
                 const statusResponse = await fetch('/admin/sync/status');
                 const statusData = await statusResponse.json();
-                
+
                 if (statusData.is_syncing) {
                     alert('A sync operation is already in progress');
                     return;
                 }
-                
+
                 // Disable button and show status
                 button.disabled = true;
                 statusDiv.style.display = 'block';
-                
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 const response = await fetch('/admin/sync', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken
                     }
                 });
-                
+
                 const result = await response.json();
-                
+
                 if (response.ok) {
                     alert('Dataset synchronization completed successfully!');
                 } else if (response.status === 409) {
@@ -734,4 +658,5 @@
         // Removed: checkSyncStatus function and related interval setup
     </script>
 </body>
+
 </html>

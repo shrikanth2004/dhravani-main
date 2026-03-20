@@ -10,6 +10,7 @@ import numpy as np
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import uuid
+import re
 import logging
 from traceback import format_exc
 from functools import wraps
@@ -46,8 +47,7 @@ from lazy_loader import LazyTranscriptLoader
 from super_admin import super_admin_bp
 from flask_compress import Compress
 
-from transcriber.english_transcriber import transcribe_english as transcribe_english
-from transcriber.kannada_transcriber import transcribe_kannada as transcribe_kannada
+from transcriber.multi_transcriber import transcribe_audio
 
 
 
@@ -250,14 +250,36 @@ def auth_callback():
         # Make session permanent so it survives browser restarts
         session.permanent = True
         
-        # Store all necessary user data in session to avoid future API calls
+        # Get user id and email from OAuth response
+        user_id = user.get('id')
+        user_email = user.get('email', '')
+        
+        # ALWAYS fetch the user from PocketBase to get the actual role
+        # This ensures we get the correct role set in PocketBase admin
+        try:
+            pb = app.pb
+            # Get the user directly by ID to get the latest role
+            pb_user = pb.collection('users').get_one(user_id)
+            user_role = getattr(pb_user, 'role', 'user')
+            
+            # If role is empty, default to user
+            if not user_role:
+                user_role = 'user'
+                
+            logger.info(f"User {user_email} logged in with role: {user_role}")
+        except Exception as e:
+            logger.warning(f"Error fetching user from PocketBase: {e}")
+            # Fall back to default user role
+            user_role = 'user'
+        
+        # Store all necessary user data in session
         session['user'] = {
-            'id': user.get('id'),
-            'email': user.get('email', ''),
+            'id': user_id,
+            'email': user_email,
             'name': user.get('name', ''),
-            'token': token,  # Store token in session for auth restoration
-            'is_moderator': user.get('role', '').lower() in ['moderator', 'admin'],
-            'role': user.get('role', '').lower(),
+            'token': token,
+            'is_moderator': user_role in ['moderator', 'admin'],
+            'role': user_role,
             'gender': user.get('gender', ''),
             'age_group': user.get('age_group', ''),
             'country': user.get('country', ''),
@@ -267,14 +289,14 @@ def auth_callback():
             'language': user.get('language', '')
         }
 
-        # Only save token in PocketBase auth store
+        # Save token in PocketBase auth store
         app.pb.auth_store.save(token, None)
         
         # Create tokens
         access_token = create_access_token(session['user'])
         refresh_token = create_refresh_token(session['user'])
         
-        # Store tokens in session for middleware access
+        # Store tokens in session
         session['access_token'] = access_token
         session['refresh_token'] = refresh_token
         
@@ -283,6 +305,8 @@ def auth_callback():
 
     except Exception as e:
         logger.error(f"Auth error: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({'error': 'Authentication failed'}), 500
 
 @app.route('/login')
@@ -324,10 +348,13 @@ def transcriber_page():
         file.save(file_path)
 
         try:
-            if transcriber_choice == "english":
-                transcript = transcribe_english(file_path)
+            # Map language codes to transcriber functions
+            if transcriber_choice == "en":
+                transcript = transcribe_audio(file_path, transcriber_choice)
+            elif transcriber_choice == "kn":
+                transcript = transcribe_audio(file_path, transcriber_choice)
             else:
-                transcript = transcribe_kannada(file_path)
+                transcript = transcribe_audio(file_path, transcriber_choice)
 
             os.remove(file_path)
 
@@ -395,51 +422,37 @@ def start_session():
         if not get_language_name(language):
             return jsonify({'error': f'Invalid language code: {language}'}), 400
 
-        # Get domain and subdomain from form, ensure they're not None/empty
-        domain = request.form.get('domain', '').strip()
-        subdomain = request.form.get('subdomain', '').strip()
+        # Get mother tongue from form
+        mother_tongue = request.form.get('mother_tongue', '').strip()
+        custom_mother_tongue = request.form.get('customMotherTongue', '').strip()
         
-        if not domain:
-            return jsonify({'error': 'Domain is required'}), 400
+        # If "OTHER" is selected, use custom value
+        if mother_tongue == 'OTHER':
+            if not custom_mother_tongue:
+                return jsonify({'error': 'Please enter custom mother tongue'}), 400
+            mother_tongue = custom_mother_tongue
         
-        if not subdomain:
-            return jsonify({'error': 'Subdomain is required'}), 400
-        
-        # Validate domain and subdomain exist in database
-        available_domains = get_available_domains()
-        if not available_domains:
-            return jsonify({'error': 'No domains available'}), 400
-        
-        if domain not in available_domains:
-            return jsonify({'error': f'Invalid domain: {domain}'}), 400
-            
-        available_subdomains = get_available_subdomains(domain)
-        if not available_subdomains:
-            return jsonify({'error': 'No subdomains available for selected domain'}), 400
-        
-        if subdomain not in available_subdomains:
-            return jsonify({'error': f'Invalid subdomain: {subdomain}'}), 400
+        if not mother_tongue:
+            return jsonify({'error': 'Mother tongue is required'}), 400
 
         # Create lazy loader for transcripts instead of loading all at once
         try:
             # Get batch size from environment or use default
             batch_size = int(os.getenv('TRANSCRIPT_BATCH_SIZE', '50'))
             
-            # Initialize the lazy loader with domain and subdomain filters
+            # Initialize the lazy loader without domain and subdomain filters
             transcript_loader = LazyTranscriptLoader(
                 language=language,
                 batch_size=batch_size,
-                randomize=True,  # Keep the randomization
-                domain=domain,    # Add domain filter
-                subdomain=subdomain  # Add subdomain filter
+                randomize=True  # Keep the randomization
             )
             
-            # Check if we have any transcripts with the selected domain/subdomain
+            # Check if we have any transcripts available
             progress = transcript_loader.get_progress()
             if progress['total'] == 0:
-                return jsonify({'error': f'No available transcripts for the selected domain ({domain}) and subdomain ({subdomain})'}), 400
+                return jsonify({'error': f'No available transcripts for the selected language'}), 400
             
-            logger.debug(f"Lazy loader initialized with {progress['loaded']} transcripts loaded, {progress['total']} total for domain {domain}, subdomain {subdomain}")
+            logger.debug(f"Lazy loader initialized with {progress['loaded']} transcripts loaded, {progress['total']} total")
             
         except Exception as e:
             logger.error(f"Database error: {str(e)}")
@@ -453,14 +466,12 @@ def start_session():
                 # Update user profile in PocketBase with the form data
                 profile_data = {
                     'gender': request.form.get('gender'),
-                    'age_group': request.form.get('age_group'),
+                    'age': request.form.get('age'),
                     'country': request.form.get('country'),
                     'state_province': request.form.get('state'),
                     'city': request.form.get('city'),
                     'accent': request.form.get('accent'),
-                    'language': request.form.get('language'),
-                    'domain': domain,
-                    'subdomain': subdomain
+                    'language': request.form.get('language')
                 }
                 
                 # Try to update user profile, if it fails due to auth issues, return an error
@@ -497,10 +508,11 @@ def start_session():
         user_session['preparator'].country = request.form.get('country')
         user_session['preparator'].state = request.form.get('state')
         user_session['preparator'].city = request.form.get('city')
-        user_session['preparator'].age_group = request.form.get('age_group')
+        user_session['preparator'].age_range = request.form.get('age_range')
         user_session['preparator'].accent = request.form.get('accent')
-        user_session['preparator'].domain = domain
-        user_session['preparator'].subdomain = subdomain
+        user_session['preparator'].mother_tongue = mother_tongue
+        user_session['preparator'].education = request.form.get('education', '')
+        user_session['preparator'].district = request.form.get('district', '')
         
         # Store transcript loader in session instead of all transcripts
         user_session['transcript_loader'] = transcript_loader
@@ -524,10 +536,9 @@ def start_session():
                 'country': request.form.get('country'),
                 'state_province': request.form.get('state'),
                 'city': request.form.get('city'),
-                'age_group': request.form.get('age_group'),
+                'age': request.form.get('age'),
                 'accent': request.form.get('accent'),
-                'domain': domain,
-                'subdomain': subdomain
+                'mother_tongue': mother_tongue
             })
             
             # Save updated values back to session
@@ -542,8 +553,7 @@ def start_session():
             'language_name': get_language_name(language),
             'speaker_name': speaker_name,
             'transcript_order': 'random',
-            'domain': domain,
-            'subdomain': subdomain
+            'mother_tongue': mother_tongue
         })
         
     except Exception as e:
@@ -561,7 +571,7 @@ def next_transcript():
     
     # Get current transcript
     current = transcript_loader.get_current()
-    if not current:
+    if not current: 
         return jsonify({'finished': True})
     
     # Get progress information
@@ -720,15 +730,25 @@ def save_recording():
         enable_auth = os.getenv('ENABLE_AUTH', 'true').lower() == 'true'
         if enable_auth and session.get('user'):
             user_id = session['user']['id']
-            username = session['user'].get('email', '').split('@')[0]
+            # Get username: use name if available, otherwise use email prefix
+            username = session['user'].get('name', '').strip()
+            if not username:
+                username = session['user'].get('email', '').split('@')[0]
+            # Sanitize username: remove special characters, keep only alphanumeric and underscore
+            username = re.sub(r'[^a-zA-Z0-9_]', '', username)
+            if not username:
+                username = 'user'
         else:
             user_id = 'anonymous'
             username = user_session['preparator'].speaker_name
+            # Sanitize username for non-authenticated users
+            username = re.sub(r'[^a-zA-Z0-9_]', '', username)
+            if not username:
+                username = 'anonymous'
 
-        # Generate unique filename
+        # Generate unique filename with format: username_YYYYMMDD_HHMMSS.wav
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        user_id_prefix = user_id[:int(len(user_id) * 0.6)]
-        filename = f"{user_id_prefix}_{timestamp}.wav"
+        filename = f"{username}_{timestamp}.wav"
 
         # Get PCM data parameters
         sample_rate = int(request.form.get('sampleRate', 48000))
@@ -738,6 +758,10 @@ def save_recording():
         
         # Read PCM data from file
         pcm_data = audio_file.read()
+        logger.info(f"PCM received: {len(pcm_data)} bytes")
+        if len(pcm_data) % 2 != 0:
+            pcm_data += b'\x00'
+            logger.info(f"Padded PCM to even: {len(pcm_data)} bytes")
         
         # Calculate duration based on PCM data length, accounting for processing
         bytes_per_sample = bits_per_sample // 8
@@ -758,14 +782,12 @@ def save_recording():
         # Save locally if enabled
         local_path = None
         if should_save_locally():
-            local_path = user_session['preparator'].save_audio(
-                pcm_data, 
-                sample_rate, 
-                filename,
-                bits_per_sample,
-                channels,
-                already_processed  # Pass the parameter correctly
-            )
+            try:
+                local_path = user_session['preparator'].save_audio(pcm_data, sample_rate, bits_per_sample, channels, filename, already_processed)
+                logger.info(f"Audio saved to local_path: {local_path}")
+            except Exception as save_error:
+                logger.error(f"Failed to save audio file {filename}: {save_error}")
+                local_path = None
 
         language = user_session['preparator'].language
         
@@ -782,6 +804,29 @@ def save_recording():
         domain = user_session['preparator'].domain
         subdomain = user_session['preparator'].subdomain
 
+# LOGGING BEFORE SAVE - Step 1 ✓
+        logger.info(f"=== SAVING RECORDING DEBUG ===")
+        logger.info(f"Filename: {filename}")
+        logger.info(f"User ID: {user_id}, Username: {username}")
+        logger.info(f"Language: {language}")
+        logger.info(f"Duration: {duration}s")
+        logger.info(f"Transcript ID: {current_transcript.get('id')}")
+        logger.info(f"Local path: {local_path}")
+        logger.info(f"SAVE_LOCALLY env: {should_save_locally()}")
+
+        # Generate the user_info JSON
+        user_info_dict = {
+            'gender': user_session['preparator'].gender or 'unknown',
+            'age': getattr(user_session['preparator'], 'age_range', getattr(user_session['preparator'], 'age', 0)),
+            'country': user_session['preparator'].country.strip() if user_session['preparator'].country else 'unknown',
+            'state': user_session['preparator'].state.strip() if user_session['preparator'].state else 'unknown',
+            'city': user_session['preparator'].city.strip() if user_session['preparator'].city else 'unknown',
+            'accent': user_session['preparator'].accent or 'unknown',
+            'mother_tongue': user_session['preparator'].mother_tongue or 'unknown',
+            'education': getattr(user_session['preparator'], 'education', 'unknown'),
+            'district': getattr(user_session['preparator'], 'district', 'unknown')
+        }
+
         # Create metadata without transcription field
         metadata = {
             'user_id': user_id,
@@ -790,27 +835,35 @@ def save_recording():
             'speaker_name': user_session['preparator'].speaker_name.strip(),
             'speaker_id': f"spk_{user_id}",
             'audio_path': f"{language}/audio/{filename}",
-            'sampling_rate': sample_rate,
+            'sampling_rate': 16000,
             'duration': duration,
             'language': language,
-            'gender': user_session['preparator'].gender,
-            'country': user_session['preparator'].country.strip(),
-            'state': user_session['preparator'].state.strip(),
-            'city': user_session['preparator'].city.strip(),
-            'verified': False,
+            'gender': user_session['preparator'].gender or 'unknown',
+            'country': user_session['preparator'].country.strip() or 'unknown',
+            'state': user_session['preparator'].state.strip() or 'unknown',
+            'city': user_session['preparator'].city.strip() or 'unknown',
             'username': username.strip(),
-            'age_group': user_session['preparator'].age_group,
-            'accent': user_session['preparator'].accent,
-            'domain': domain,
-            'subdomain': subdomain
+            'age': getattr(user_session['preparator'], 'age_range', getattr(user_session['preparator'], 'age', 0)),
+            'accent': user_session['preparator'].accent or 'unknown',
+            'mother_tongue': user_session['preparator'].mother_tongue or 'unknown',
+            'domain': domain or 'GEN',
+            'subdomain': subdomain or 'GEN',
+            'user_info': json.dumps(user_info_dict),
+            'audio_sampling_rate': 16000,
+            'audio_file_name': filename
         }
+
+        logger.info(f"Metadata keys: {list(metadata.keys())}")
+        logger.info(f"Non-null values: {{k: metadata[k] for k,v in metadata.items() if v}}")
+        logger.info(f"==========================")
 
         # Store metadata in PostgreSQL
         try:
-            store_metadata(metadata)
-            logger.info(f"Stored metadata for recording: {filename}")
+            recording_id = store_metadata(metadata)
+            logger.info(f"✅ Stored metadata for {filename} (ID: {recording_id})")
         except Exception as db_error:
-            logger.error(f"Database error storing metadata: {str(db_error)}")
+            logger.error(f"❌ Database error storing metadata for {filename}: {str(db_error)}")
+            logger.error(format_exc())
             return jsonify({'error': f'Database error: {str(db_error)}'}), 500
 
         # After storing metadata, mark the transcription as recorded
@@ -917,22 +970,17 @@ def get_languages():
 def get_domain_list():
     """Get list of available domains"""
     try:
-        # Get domains actually in use from database
-        available_domain_codes = get_available_domains()
-        
-        # Get all defined domains from database
+        # Return ALL domains from domain_subdomain.py configuration
+        # This ensures all domains are always available in the UI
         all_domains = get_all_domains()
-        
-        # Filter domains to only those in use
-        filtered_domains = {code: name for code, name in all_domains.items() if code in available_domain_codes}
         
         return jsonify({
             'status': 'success',
-            'domains': filtered_domains
+            'domains': all_domains
         })
     except Exception as e:
         logger.error(f"Error getting domains: {str(e)}")
-        # Return empty domains as fallback instead of GEN
+        # Return empty domains as fallback
         return jsonify({
             'status': 'error',
             'message': 'Failed to load domains',
@@ -943,22 +991,17 @@ def get_domain_list():
 def get_subdomain_list(domain_code):
     """Get list of subdomains for a domain"""
     try:
-        # Get subdomains actually in use from database
-        available_subdomain_codes = get_available_subdomains(domain_code)
-        
-        # Get all defined subdomains for this domain from database
+        # Return ALL subdomains from domain_subdomain.py configuration
+        # This ensures all subdomains are always available in the UI
         all_subdomains = get_domain_subdomains(domain_code)
-        
-        # Filter subdomains to only those in use
-        filtered_subdomains = [s for s in all_subdomains if s['mnemonic'] in available_subdomain_codes]
         
         return jsonify({
             'status': 'success',
-            'subdomains': filtered_subdomains
+            'subdomains': all_subdomains
         })
     except Exception as e:
         logger.error(f"Error getting subdomains: {str(e)}")
-        # Return empty subdomains as fallback instead of GEN
+        # Return empty subdomains as fallback
         return jsonify({
             'status': 'error',
             'message': 'Failed to load subdomains',

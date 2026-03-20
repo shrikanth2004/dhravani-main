@@ -1,0 +1,215 @@
+2026-03-19 16:18:07,516 - prepare_parquet - INFO - Starting Parquet file update process
+2026-03-19 16:21:16,316 - prepare_parquet - INFO - Starting Parquet file update process
+2026-03-19 16:21:17,025 - dataset_sync - INFO - Added verified audio file to sync: datasets\bn\audio\nshrikanthnyak19_20260319_160124.wav
+2026-03-19 16:21:17,037 - dataset_sync - INFO - Added verified audio file to sync: datasets\hi\audio\shreesha22cs145_20260319_150739.wav
+2026-03-19 16:21:17,045 - dataset_sync - INFO - Added verified audio file to sync: datasets\kn\audio\srijan22cs159_20260317_144216.wav
+2026-03-19 16:21:17,055 - dataset_sync - INFO - Added verified audio file to sync: datasets\kok\audio\shreesha22cs145_20260316_144046.wav
+2026-03-19 16:21:17,059 - dataset_sync - INFO - Added verified audio file to sync: datasets\kok\audio\shreesha22cs145_20260316_145621.wav
+2026-03-19 16:21:17,066 - dataset_sync - INFO - Added verified audio file to sync: datasets\kok\audio\shreesha22cs145_20260319_161255.wav
+2026-03-19 16:21:17,088 - dataset_sync - INFO - Added verified audio file to sync: datasets\ol\audio\shreesha22cs145_20260319_152906.wav
+2026-03-19 16:21:17,105 - dataset_sync - INFO - Added verified audio file to sync: datasets\te\audio\srijan22cs159_20260319_102821.wav
+2026-03-19 16:21:17,116 - dataset_sync - INFO - Added verified audio file to sync: datasets\ur\audio\shreesha22cs145_20260319_151332.wav
+2026-03-19 16:21:17,124 - dataset_sync - INFO - Added verified audio file to sync: datasets\ur\audio\shreesha22cs145_20260319_152014.wav
+2026-03-19 16:21:17,126 - prepare_parquet - INFO - Starting Parquet file update process
+2026-03-20 10:23:38,914 - prepare_parquet - INFO - Starting Parquet file update process
+2026-03-20 10:23:40,161 - dataset_sync - INFO - Created README.md with Hugging Face dataset configuration
+2026-03-20 10:23:40,414 - dataset_sync - INFO - Uploading README.md to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 10:23:43,259 - dataset_sync - INFO - Successfully uploaded README.md
+2026-03-20 10:41:41,988 - prepare_parquet - INFO - Starting Parquet file update process
+2026-03-20 10:41:42,147 - prepare_parquet - INFO - Created/Updated Parquet file for bn with 1 records
+2026-03-20 10:41:42,174 - prepare_parquet - INFO - Created/Updated Parquet file for bdo with 4 records
+2026-03-20 10:41:42,218 - prepare_parquet - INFO - Created/Updated Parquet file for gu with 2 records
+2026-03-20 10:41:42,244 - prepare_parquet - INFO - Created/Updated Parquet file for hi with 5 records
+2026-03-20 10:41:42,269 - prepare_parquet - INFO - Created/Updated Parquet file for kn with 17 records
+2026-03-20 10:41:42,312 - prepare_parquet - INFO - Created/Updated Parquet file for kok with 6 records
+2026-03-20 10:41:42,336 - prepare_parquet - INFO - Created/Updated Parquet file for mai with 1 records
+2026-03-20 10:41:42,359 - prepare_parquet - INFO - Created/Updated Parquet file for ml with 1 records
+2026-03-20 10:41:42,406 - prepare_parquet - INFO - Created/Updated Parquet file for mni with 2 records
+2026-03-20 10:41:42,431 - prepare_parquet - INFO - Created/Updated Parquet file for ne with 1 records
+2026-03-20 10:41:42,456 - prepare_parquet - INFO - Created/Updated Parquet file for ol with 2 records
+2026-03-20 10:41:42,520 - prepare_parquet - INFO - Created/Updated Parquet file for sa with 1 records
+2026-03-20 10:41:42,546 - prepare_parquet - INFO - Created/Updated Parquet file for sd with 1 records
+2026-03-20 10:41:42,572 - prepare_parquet - INFO - Created/Updated Parquet file for ta with 1 records
+2026-03-20 10:41:42,600 - prepare_parquet - INFO - Created/Updated Parquet file for te with 2 records
+2026-03-20 10:41:42,625 - prepare_parquet - INFO - Created/Updated Parquet file for ur with 2 records
+2026-03-20 11:19:41,810 - prepare_parquet - INFO - Starting Parquet file update process
+2026-03-20 11:19:41,972 - prepare_parquet - INFO - Created/Updated Parquet file for bn with 1 records
+2026-03-20 11:19:42,001 - prepare_parquet - INFO - Created/Updated Parquet file for bdo with 4 records
+2026-03-20 11:19:42,047 - prepare_parquet - INFO - Created/Updated Parquet file for gu with 2 records
+2026-03-20 11:19:42,072 - prepare_parquet - INFO - Created/Updated Parquet file for hi with 5 records
+2026-03-20 11:19:42,099 - prepare_parquet - INFO - Created/Updated Parquet file for kn with 17 records
+2026-03-20 11:19:42,145 - prepare_parquet - INFO - Created/Updated Parquet file for kok with 6 records
+2026-03-20 11:19:42,170 - prepare_parquet - INFO - Created/Updated Parquet file for mai with 1 records
+2026-03-20 11:19:42,199 - prepare_parquet - INFO - Created/Updated Parquet file for ml with 1 records
+2026-03-20 11:19:42,245 - prepare_parquet - INFO - Created/Updated Parquet file for mni with 2 records
+2026-03-20 11:19:42,271 - prepare_parquet - INFO - Created/Updated Parquet file for ne with 1 records
+2026-03-20 11:19:42,298 - prepare_parquet - INFO - Created/Updated Parquet file for ol with 2 records
+2026-03-20 11:19:42,364 - prepare_parquet - INFO - Created/Updated Parquet file for sa with 1 records
+2026-03-20 11:19:42,391 - prepare_parquet - INFO - Created/Updated Parquet file for sd with 1 records
+2026-03-20 11:19:42,419 - prepare_parquet - INFO - Created/Updated Parquet file for ta with 1 records
+2026-03-20 11:19:42,445 - prepare_parquet - INFO - Created/Updated Parquet file for te with 2 records
+2026-03-20 11:19:42,472 - prepare_parquet - INFO - Created/Updated Parquet file for ur with 3 records
+2026-03-20 11:26:49,892 - prepare_parquet - INFO - Starting Parquet file update process
+2026-03-20 11:26:50,055 - prepare_parquet - INFO - Created/Updated Parquet file for bn with 1 records
+2026-03-20 11:26:50,081 - prepare_parquet - INFO - Created/Updated Parquet file for bdo with 4 records
+2026-03-20 11:26:50,128 - prepare_parquet - INFO - Created/Updated Parquet file for gu with 2 records
+2026-03-20 11:26:50,151 - prepare_parquet - INFO - Created/Updated Parquet file for hi with 5 records
+2026-03-20 11:26:50,179 - prepare_parquet - INFO - Created/Updated Parquet file for kn with 17 records
+2026-03-20 11:26:50,225 - prepare_parquet - INFO - Created/Updated Parquet file for kok with 6 records
+2026-03-20 11:26:50,249 - prepare_parquet - INFO - Created/Updated Parquet file for mai with 1 records
+2026-03-20 11:26:50,276 - prepare_parquet - INFO - Created/Updated Parquet file for ml with 1 records
+2026-03-20 11:26:50,321 - prepare_parquet - INFO - Created/Updated Parquet file for mni with 2 records
+2026-03-20 11:26:50,345 - prepare_parquet - INFO - Created/Updated Parquet file for ne with 1 records
+2026-03-20 11:26:50,371 - prepare_parquet - INFO - Created/Updated Parquet file for ol with 2 records
+2026-03-20 11:26:50,438 - prepare_parquet - INFO - Created/Updated Parquet file for sa with 1 records
+2026-03-20 11:26:50,473 - prepare_parquet - INFO - Created/Updated Parquet file for sd with 1 records
+2026-03-20 11:26:50,502 - prepare_parquet - INFO - Created/Updated Parquet file for ta with 1 records
+2026-03-20 11:26:50,535 - prepare_parquet - INFO - Created/Updated Parquet file for te with 2 records
+2026-03-20 11:26:50,565 - prepare_parquet - INFO - Created/Updated Parquet file for ur with 3 records
+2026-03-20 11:26:50,580 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\bdo\bdo.parquet
+2026-03-20 11:26:50,612 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\bn\bn.parquet
+2026-03-20 11:26:50,632 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\gu\gu.parquet
+2026-03-20 11:26:50,644 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\hi\hi.parquet
+2026-03-20 11:26:50,662 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\kn\kn.parquet
+2026-03-20 11:26:50,687 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\kok\kok.parquet
+2026-03-20 11:26:50,710 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\mai\mai.parquet
+2026-03-20 11:26:50,731 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\ml\ml.parquet
+2026-03-20 11:26:50,742 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\mni\mni.parquet
+2026-03-20 11:26:50,757 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\ne\ne.parquet
+2026-03-20 11:26:50,774 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\ol\ol.parquet
+2026-03-20 11:26:50,791 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\sa\sa.parquet
+2026-03-20 11:26:50,800 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\sd\sd.parquet
+2026-03-20 11:26:50,813 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\ta\ta.parquet
+2026-03-20 11:26:50,825 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\te\te.parquet
+2026-03-20 11:26:50,845 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\ur\ur.parquet
+2026-03-20 11:26:51,188 - dataset_sync - INFO - Uploading bdo/bdo.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:26:51,188 - dataset_sync - INFO - Uploading hi/hi.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:26:51,189 - dataset_sync - INFO - Uploading bn/bn.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:26:51,189 - dataset_sync - INFO - Uploading gu/gu.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:26:54,859 - dataset_sync - WARNING - Upload failed for datasets\bdo\bdo.parquet, retrying... (1/3)
+2026-03-20 11:26:54,921 - dataset_sync - INFO - Successfully uploaded gu/gu.parquet
+2026-03-20 11:26:55,079 - dataset_sync - WARNING - Upload failed for datasets\bn\bn.parquet, retrying... (1/3)
+2026-03-20 11:26:55,080 - dataset_sync - INFO - Uploading kn/kn.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:26:55,148 - dataset_sync - INFO - Successfully uploaded hi/hi.parquet
+2026-03-20 11:26:55,269 - dataset_sync - INFO - Uploading kok/kok.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:26:55,925 - dataset_sync - INFO - Uploading bdo/bdo.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:26:56,146 - dataset_sync - INFO - Uploading bn/bn.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:26:57,282 - dataset_sync - INFO - Successfully uploaded bdo/bdo.parquet
+2026-03-20 11:26:57,387 - dataset_sync - INFO - Uploading mai/mai.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:26:57,557 - dataset_sync - WARNING - Upload failed for datasets\kok\kok.parquet, retrying... (1/3)
+2026-03-20 11:26:57,665 - dataset_sync - INFO - Successfully uploaded bn/bn.parquet
+2026-03-20 11:26:57,772 - dataset_sync - INFO - Uploading ml/ml.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:26:57,945 - dataset_sync - INFO - Successfully uploaded kn/kn.parquet
+2026-03-20 11:26:58,067 - dataset_sync - INFO - Uploading mni/mni.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:26:58,617 - dataset_sync - INFO - Uploading kok/kok.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:27:00,382 - dataset_sync - INFO - Successfully uploaded kok/kok.parquet
+2026-03-20 11:27:00,493 - dataset_sync - INFO - Uploading ne/ne.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:27:00,622 - dataset_sync - INFO - Successfully uploaded mai/mai.parquet
+2026-03-20 11:27:00,779 - dataset_sync - WARNING - Upload failed for datasets\ml\ml.parquet, retrying... (1/3)
+2026-03-20 11:27:00,781 - dataset_sync - INFO - Uploading ol/ol.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:27:01,833 - dataset_sync - INFO - Uploading ml/ml.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:27:02,775 - dataset_sync - INFO - Successfully uploaded mni/mni.parquet
+2026-03-20 11:27:02,881 - dataset_sync - INFO - Uploading sa/sa.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:27:03,486 - dataset_sync - WARNING - Upload failed for datasets\ne\ne.parquet, retrying... (1/3)
+2026-03-20 11:27:03,500 - dataset_sync - INFO - Successfully uploaded ml/ml.parquet
+2026-03-20 11:27:03,604 - dataset_sync - INFO - Uploading sd/sd.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:27:03,937 - dataset_sync - INFO - Successfully uploaded ol/ol.parquet
+2026-03-20 11:27:04,042 - dataset_sync - INFO - Uploading ta/ta.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:27:04,560 - dataset_sync - INFO - Uploading ne/ne.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:27:05,383 - dataset_sync - INFO - Successfully uploaded sa/sa.parquet
+2026-03-20 11:27:05,504 - dataset_sync - INFO - Uploading te/te.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:27:05,993 - dataset_sync - WARNING - Upload failed for datasets\ta\ta.parquet, retrying... (1/3)
+2026-03-20 11:27:05,993 - dataset_sync - INFO - Successfully uploaded ne/ne.parquet
+2026-03-20 11:27:06,104 - dataset_sync - INFO - Uploading ur/ur.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:27:06,300 - dataset_sync - INFO - Successfully uploaded sd/sd.parquet
+2026-03-20 11:27:07,056 - dataset_sync - INFO - Uploading ta/ta.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:27:07,484 - dataset_sync - INFO - Successfully uploaded te/te.parquet
+2026-03-20 11:27:08,161 - dataset_sync - WARNING - Upload failed for datasets\ta\ta.parquet, retrying... (2/3)
+2026-03-20 11:27:08,162 - dataset_sync - INFO - Successfully uploaded ur/ur.parquet
+2026-03-20 11:27:10,217 - dataset_sync - INFO - Uploading ta/ta.parquet to shreeshacharya/Dhravani (attempt 3)
+2026-03-20 11:27:11,668 - dataset_sync - INFO - Successfully uploaded ta/ta.parquet
+2026-03-20 11:49:38,257 - prepare_parquet - INFO - Starting Parquet file update process
+2026-03-20 11:49:38,386 - prepare_parquet - INFO - Created/Updated Parquet file for bn with 1 records
+2026-03-20 11:49:38,415 - prepare_parquet - INFO - Created/Updated Parquet file for bdo with 4 records
+2026-03-20 11:49:38,471 - prepare_parquet - INFO - Created/Updated Parquet file for gu with 2 records
+2026-03-20 11:49:38,504 - prepare_parquet - INFO - Created/Updated Parquet file for hi with 5 records
+2026-03-20 11:49:38,539 - prepare_parquet - INFO - Created/Updated Parquet file for kn with 17 records
+2026-03-20 11:49:38,587 - prepare_parquet - INFO - Created/Updated Parquet file for kok with 6 records
+2026-03-20 11:49:38,618 - prepare_parquet - INFO - Created/Updated Parquet file for mai with 1 records
+2026-03-20 11:49:38,652 - prepare_parquet - INFO - Created/Updated Parquet file for ml with 1 records
+2026-03-20 11:49:38,702 - prepare_parquet - INFO - Created/Updated Parquet file for mni with 2 records
+2026-03-20 11:49:38,730 - prepare_parquet - INFO - Created/Updated Parquet file for ne with 1 records
+2026-03-20 11:49:38,762 - prepare_parquet - INFO - Created/Updated Parquet file for ol with 2 records
+2026-03-20 11:49:38,829 - prepare_parquet - INFO - Created/Updated Parquet file for sa with 1 records
+2026-03-20 11:49:38,861 - prepare_parquet - INFO - Created/Updated Parquet file for sd with 1 records
+2026-03-20 11:49:38,894 - prepare_parquet - INFO - Created/Updated Parquet file for ta with 1 records
+2026-03-20 11:49:38,928 - prepare_parquet - INFO - Created/Updated Parquet file for te with 2 records
+2026-03-20 11:49:38,957 - prepare_parquet - INFO - Created/Updated Parquet file for ur with 3 records
+2026-03-20 11:49:38,970 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\bdo\bdo.parquet
+2026-03-20 11:49:38,994 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\bn\bn.parquet
+2026-03-20 11:49:39,016 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\gu\gu.parquet
+2026-03-20 11:49:39,029 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\hi\hi.parquet
+2026-03-20 11:49:39,050 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\kn\kn.parquet
+2026-03-20 11:49:39,070 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\kok\kok.parquet
+2026-03-20 11:49:39,093 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\mai\mai.parquet
+2026-03-20 11:49:39,113 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\ml\ml.parquet
+2026-03-20 11:49:39,125 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\mni\mni.parquet
+2026-03-20 11:49:39,157 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\ne\ne.parquet
+2026-03-20 11:49:39,178 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\ol\ol.parquet
+2026-03-20 11:49:39,198 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\sa\sa.parquet
+2026-03-20 11:49:39,214 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\sd\sd.parquet
+2026-03-20 11:49:39,231 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\ta\ta.parquet
+2026-03-20 11:49:39,243 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\te\te.parquet
+2026-03-20 11:49:39,283 - dataset_sync - INFO - Added updated Parquet file to sync: datasets\ur\ur.parquet
+2026-03-20 11:49:39,573 - dataset_sync - INFO - Uploading hi/hi.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:39,573 - dataset_sync - INFO - Uploading bdo/bdo.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:39,574 - dataset_sync - INFO - Uploading gu/gu.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:39,574 - dataset_sync - INFO - Uploading bn/bn.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:45,398 - dataset_sync - WARNING - Upload failed for datasets\bdo\bdo.parquet, retrying... (1/3)
+2026-03-20 11:49:45,635 - dataset_sync - INFO - Successfully uploaded gu/gu.parquet
+2026-03-20 11:49:45,876 - dataset_sync - WARNING - Upload failed for datasets\hi\hi.parquet, retrying... (1/3)
+2026-03-20 11:49:45,879 - dataset_sync - INFO - Uploading kn/kn.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:46,096 - dataset_sync - INFO - Successfully uploaded bn/bn.parquet
+2026-03-20 11:49:46,188 - dataset_sync - INFO - Uploading kok/kok.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:46,457 - dataset_sync - INFO - Uploading bdo/bdo.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:49:46,926 - dataset_sync - INFO - Uploading hi/hi.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:49:48,236 - dataset_sync - WARNING - Upload failed for datasets\hi\hi.parquet, retrying... (2/3)
+2026-03-20 11:49:48,264 - dataset_sync - INFO - Successfully uploaded bdo/bdo.parquet
+2026-03-20 11:49:48,361 - dataset_sync - INFO - Uploading mai/mai.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:48,794 - dataset_sync - WARNING - Upload failed for datasets\kok\kok.parquet, retrying... (1/3)
+2026-03-20 11:49:48,967 - dataset_sync - INFO - Successfully uploaded kn/kn.parquet
+2026-03-20 11:49:49,058 - dataset_sync - INFO - Uploading ml/ml.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:49,856 - dataset_sync - INFO - Uploading kok/kok.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:49:50,286 - dataset_sync - INFO - Uploading hi/hi.parquet to shreeshacharya/Dhravani (attempt 3)
+2026-03-20 11:49:51,339 - dataset_sync - WARNING - Upload failed for datasets\mai\mai.parquet, retrying... (1/3)
+2026-03-20 11:49:51,814 - dataset_sync - WARNING - Upload failed for datasets\ml\ml.parquet, retrying... (1/3)
+2026-03-20 11:49:52,200 - dataset_sync - INFO - Successfully uploaded kok/kok.parquet
+2026-03-20 11:49:52,330 - dataset_sync - INFO - Uploading mni/mni.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:52,403 - dataset_sync - INFO - Uploading mai/mai.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:49:52,434 - dataset_sync - INFO - Successfully uploaded hi/hi.parquet
+2026-03-20 11:49:52,553 - dataset_sync - INFO - Uploading ne/ne.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:52,882 - dataset_sync - INFO - Uploading ml/ml.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:49:56,300 - dataset_sync - INFO - Successfully uploaded mai/mai.parquet
+2026-03-20 11:49:56,408 - dataset_sync - INFO - Uploading ol/ol.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:57,206 - dataset_sync - WARNING - Upload failed for datasets\mni\mni.parquet, retrying... (1/3)
+2026-03-20 11:49:57,208 - dataset_sync - INFO - Successfully uploaded ml/ml.parquet
+2026-03-20 11:49:57,327 - dataset_sync - INFO - Uploading sa/sa.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:58,273 - dataset_sync - INFO - Uploading mni/mni.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:49:58,354 - dataset_sync - INFO - Successfully uploaded ne/ne.parquet
+2026-03-20 11:49:58,517 - dataset_sync - INFO - Uploading sd/sd.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:49:59,677 - dataset_sync - INFO - Successfully uploaded ol/ol.parquet
+2026-03-20 11:49:59,764 - dataset_sync - INFO - Uploading ta/ta.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:50:00,020 - dataset_sync - INFO - Successfully uploaded sa/sa.parquet
+2026-03-20 11:50:00,151 - dataset_sync - WARNING - Upload failed for datasets\mni\mni.parquet, retrying... (2/3)
+2026-03-20 11:50:00,153 - dataset_sync - INFO - Uploading te/te.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:50:02,200 - dataset_sync - INFO - Uploading mni/mni.parquet to shreeshacharya/Dhravani (attempt 3)
+2026-03-20 11:50:03,576 - dataset_sync - INFO - Successfully uploaded sd/sd.parquet
+2026-03-20 11:50:03,666 - dataset_sync - INFO - Uploading ur/ur.parquet to shreeshacharya/Dhravani (attempt 1)
+2026-03-20 11:50:04,056 - dataset_sync - WARNING - Upload failed for datasets\te\te.parquet, retrying... (1/3)
+2026-03-20 11:50:04,066 - dataset_sync - INFO - Successfully uploaded mni/mni.parquet
+2026-03-20 11:50:04,575 - dataset_sync - INFO - Successfully uploaded ta/ta.parquet
+2026-03-20 11:50:05,106 - dataset_sync - INFO - Uploading te/te.parquet to shreeshacharya/Dhravani (attempt 2)
+2026-03-20 11:50:06,430 - dataset_sync - INFO - Successfully uploaded ur/ur.parquet
+2026-03-20 11:50:06,736 - dataset_sync - WARNING - Upload failed for datasets\te\te.parquet, retrying... (2/3)
+2026-03-20 11:50:08,787 - dataset_sync - INFO - Uploading te/te.parquet to shreeshacharya/Dhravani (attempt 3)
+2026-03-20 11:50:10,848 - dataset_sync - INFO - Successfully uploaded te/te.parquet

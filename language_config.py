@@ -81,20 +81,26 @@
 LANGUAGES = {
     'as': {'name': 'Assamese', 'native_name': 'অসমীয়া'},
     'bn': {'name': 'Bengali', 'native_name': 'বাংলা'},
+    'bdo': {'name': 'Bodo', 'native_name': 'बोडो'},
+    'doi': {'name': 'Dogri', 'native_name': 'डोगरी'},
     'gu': {'name': 'Gujarati', 'native_name': 'ગુજરાતી'},
     'hi': {'name': 'Hindi', 'native_name': 'हिन्दी'},
     'kn': {'name': 'Kannada', 'native_name': 'ಕನ್ನಡ'},
+    'ks': {'name': 'Kashmiri', 'native_name': 'کٲشُر'},
+    'kok': {'name': 'Konkani', 'native_name': 'कोंकणी'},
+    'mai': {'name': 'Maithili', 'native_name': 'মৈথিলী'},
     'ml': {'name': 'Malayalam', 'native_name': 'മലയാളം'},
     'mr': {'name': 'Marathi', 'native_name': 'मराठी'},
-    'ne': {'name': 'Nepali', 'native_name': 'नेपाली'},
+    'mni': {'name': 'Manipuri', 'native_name': 'মৈতৈলো'},
+    'ne': {'name': 'Nepalese', 'native_name': 'नेपाली'},
+    'ol': {'name': 'Santhali', 'native_name': '𑲃𑲡𑲟𑲱𑲞𑲱'},
     'or': {'name': 'Odia', 'native_name': 'ଓଡ଼ିଆ'},
     'pa': {'name': 'Punjabi', 'native_name': 'ਪੰਜਾਬੀ'},
     'sa': {'name': 'Sanskrit', 'native_name': 'संस्कृतम्'},
+    'sd': {'name': 'Sindhi', 'native_name': 'سنڌي'},
     'ta': {'name': 'Tamil', 'native_name': 'தமிழ்'},
     'te': {'name': 'Telugu', 'native_name': 'తెలుగు'},
     'ur': {'name': 'Urdu', 'native_name': 'اردو'},
-    'en': {'name': 'English', 'native_name': 'English'},
-    'do': {'name': 'Dogri', 'native_name': 'डोगरी'}
 }
 
 

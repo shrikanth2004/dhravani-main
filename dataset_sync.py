@@ -97,7 +97,7 @@ class DatasetSynchronizer:
         try:
             from prepare_parquet import update_parquet_files
             update_parquet_files()
-            logger.info("Parquet files updated successfully")
+            logger.debug("Parquet files updated successfully")
             return True
         except Exception as e:
             logger.error(f"Error preparing Parquet files: {str(e)}")
@@ -159,14 +159,27 @@ class DatasetSynchronizer:
         # Track skipped directories
         skipped_langs = set()
         
-        # Always include stats and parquet files
-        if self.stats_file.exists():
-            current_hash = self._calculate_file_hash(self.stats_file)
-            stored_hash = self.sync_state['files'].get(str(self.stats_file))
-            
-            if current_hash != stored_hash:
-                modified_files.append(self.stats_file)
-                self.sync_state['files'][str(self.stats_file)] = current_hash
+        # Ensure README.md exists and include it
+        readme_file = self.base_dir / 'README.md'
+        if not readme_file.exists():
+            try:
+                readme_content = "---\nconfigs:\n  - config_name: default\n    data_files:\n      - split: train\n        path: \"**/*.parquet\"\n---\n# Dhravani Speech Dataset\n\nThis dataset contains audio recordings and transcriptions.\n"
+                with open(readme_file, 'w', encoding='utf-8') as f:
+                    f.write(readme_content)
+                logger.info("Created README.md with Hugging Face dataset configuration")
+            except Exception as e:
+                logger.error(f"Failed to create README.md: {e}")
+
+        # Always include stats and README files
+        root_files_to_sync = [self.stats_file, readme_file]
+        for f in root_files_to_sync:
+            if f.exists():
+                current_hash = self._calculate_file_hash(f)
+                stored_hash = self.sync_state['files'].get(str(f))
+                
+                if current_hash != stored_hash:
+                    modified_files.append(f)
+                    self.sync_state['files'][str(f)] = current_hash
 
         # Iterate through language directories
         for lang_dir in self.base_dir.iterdir():
@@ -198,7 +211,8 @@ class DatasetSynchronizer:
                 if current_hash != stored_hash:
                     modified_files.append(parquet_file)
                     self.sync_state['files'][str(parquet_file)] = current_hash
-
+                    logger.info(f"Added updated Parquet file to sync: {parquet_file}")
+                
             # Check audio files - only include verified ones
             audio_dir = lang_dir / 'audio'
             if audio_dir.exists():

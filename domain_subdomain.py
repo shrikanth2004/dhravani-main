@@ -9,6 +9,7 @@ domains_and_subdomains = {
     "AGRI": "Agriculture",
     "TOUR": "Tourism",
     "HC": "Healthcare",
+    "OTHER": "Other",
   },
   "subdomains": {
     "GEN": [
@@ -169,6 +170,9 @@ domains_and_subdomains = {
       {"name": "Pharma", "mnemonic": "PHAR"},
       {"name": "Homeopathy", "mnemonic": "HOM"},
       {"name": "Ayurveda", "mnemonic": "AYU"},
+    ],
+    "OTHER": [
+      {"name": "Other", "mnemonic": "OTHER"},
     ],
   },
 }

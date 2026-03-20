@@ -9,7 +9,7 @@ class AudioMetadataSchema(Schema):
     country = fields.Str(required=True)
     state = fields.Str(required=True)
     city = fields.Str(required=True)
-    age_group = fields.Str(validate=validate.OneOf(['Teenagers', 'Adults', 'Elderly']))
+    age = fields.Int(required=True, validate=validate.Range(min=1, max=120))
     accent = fields.Str(validate=validate.OneOf(['Rural', 'Urban']))
 
 def validate_audio_metadata(data):

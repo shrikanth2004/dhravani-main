@@ -12,6 +12,8 @@ import logging
 from database_manager import store_metadata, engine
 from language_config import get_all_languages
 from sqlalchemy import text
+import numpy as np
+import scipy.signal
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -90,12 +92,14 @@ class AudioDatasetPreparator:
         if not should_save_locally():
             return
 
-    def save_audio(self, pcm_data, sample_rate, filename, bits_per_sample=16, channels=1, already_processed=False):
+    def save_audio(self, pcm_data, sample_rate, bits_per_sample, channels, filename, already_processed=False):
+        TARGET_SR = 16000
         """Save audio file in language-specific audio folder using built-in wave module with processing"""
         if not should_save_locally():
             return None
 
         try:
+            logger.info(f"Saving audio: lang={self.language}, filename={filename}, sr={sample_rate}, bits={bits_per_sample}, channels={channels}")
             # Get language directory and create audio subdirectory
             lang_dir = BASE_DIR / self.language
             audio_dir = lang_dir / 'audio'
@@ -104,50 +108,11 @@ class AudioDatasetPreparator:
             # Full path for the output WAV file
             filepath = audio_dir / filename
             
-            # Apply server-side processing if not already done client-side
-            if not already_processed and isinstance(pcm_data, (bytes, bytearray)):
-                # Convert PCM bytes to int16 array for processing
-                bytes_per_sample = bits_per_sample // 8
-                num_samples = len(pcm_data) // bytes_per_sample
-                
-                if bits_per_sample == 16:
-                    # Convert bytes to int16 array
-                    import array
-                    int16_data = array.array('h')
-                    int16_data.frombytes(pcm_data)
-                    
-                    # Parameters for audio processing
-                    samples_per_second = sample_rate * channels
-                    fade_in_samples = min(int(samples_per_second * 0.3), int(num_samples * 0.1))  # 300ms fade in
-                    end_trim_samples = min(int(samples_per_second * 0.15), int(num_samples * 0.05))  # 150ms end trim
-                    fade_out_samples = min(int(samples_per_second * 0.15), int(num_samples * 0.04))  # 150ms fade out
-                    
-                    # Step 1: Apply fade-in to the beginning (before trimming)
-                    for i in range(fade_in_samples):
-                        fade_ratio = i / fade_in_samples
-                        # Cubic ease-in curve for smooth fade
-                        smooth_fade = fade_ratio * fade_ratio * fade_ratio
-                        int16_data[i] = int(int16_data[i] * smooth_fade)
-                    
-                    # Step 2: Calculate the length after removing the end trim
-                    trimmed_length = max(0, num_samples - end_trim_samples)
-                    
-                    # Step 3: Apply fade-out at the end (before the trim point)
-                    fade_out_start = trimmed_length - fade_out_samples
-                    for i in range(fade_out_samples):
-                        if fade_out_start + i >= trimmed_length:
-                            break
-                        fade_ratio = 1 - (i / fade_out_samples)
-                        # Cubic ease-out curve for smooth fade
-                        smooth_fade = fade_ratio * fade_ratio * fade_ratio
-                        int16_data[fade_out_start + i] = int(int16_data[fade_out_start + i] * smooth_fade)
-                    
-                    # Step 4: Create new PCM data with end trimming
-                    pcm_data = int16_data[:trimmed_length].tobytes()
-                    logger.info(f"Server-side processing: applied 300ms fade-in, 150ms end trim and 150ms fade-out")
+            logger.info(f"Creating WAV at {filepath}")
             
             # Create WAV file        
             with wave.open(str(filepath), 'wb') as wav_file:
+
                 # Set WAV file parameters
                 wav_file.setnchannels(channels)
                 wav_file.setsampwidth(bits_per_sample // 8)

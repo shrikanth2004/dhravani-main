@@ -64,12 +64,16 @@
                         <input type="email" 
                                id="searchEmail" 
                                class="form-control" 
-                               placeholder="Enter exact email address..."
-                               pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}">
+                               placeholder="Enter email addresses (comma-separated)..."
+                               multiple
+                               title="Enter one or more email addresses, separated by commas">
                         <button class="btn btn-outline-primary" id="searchButton">
                             <i class="fas fa-search"></i> Search
                         </button>
                     </div>
+                    <small class="form-text text-muted">
+                        Example: user1@example.com, user2@example.com
+                    </small>
                     <div id="searchResults" class="table-responsive mt-3" style="display: none;">
                         <table class="table table-hover">
                             <thead>
@@ -274,14 +278,28 @@
 
         // Search functionality
         document.getElementById('searchButton').addEventListener('click', async function() {
-            const email = document.getElementById('searchEmail').value.trim();
-            if (!email) {
-                alert('Please enter an email address');
+            const emailInput = document.getElementById('searchEmail').value.trim();
+            if (!emailInput) {
+                alert('Please enter at least one email address');
+                return;
+            }
+
+            // Split and validate emails
+            const emails = emailInput.split(',').map(e => e.trim()).filter(e => e);
+            const validateEmail = (email) => {
+                return String(email)
+                    .toLowerCase()
+                    .match(/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/);
+            };
+
+            const invalidEmails = emails.filter(email => !validateEmail(email));
+            if (invalidEmails.length > 0) {
+                alert(`Invalid email address(es):\n${invalidEmails.join('\n')}`);
                 return;
             }
 
             try {
-                const response = await fetch(`/admin/super/users/search?email=${encodeURIComponent(email)}`, {
+                const response = await fetch(`/admin/super/users/search?email=${encodeURIComponent(emailInput)}`, {
                     headers: getAuthHeaders()
                 });
                 
@@ -313,12 +331,14 @@
                             <td>${user.name || 'N/A'}</td>
                             <td>${user.role}</td>
                             <td>
-                                ${(user.role !== 'admin' && !isSelf) ? 
-                                    `<button class="btn btn-sm btn-primary make-admin" data-user-id="${user.id}">
+                                ${isSelf ? '<span class="text-muted">Current User</span>' : 
+                                  user.role === 'admin' ?
+                                    `<button class="btn btn-sm btn-warning remove-admin-search" data-user-id="${user.id}">
+                                        Remove Admin
+                                    </button>` :
+                                    `<button class="btn btn-sm btn-primary make-admin-search" data-user-id="${user.id}">
                                         Make Admin
-                                    </button>` : 
-                                    isSelf ? '<span class="text-muted">Current User</span>' : 
-                                    '<span class="text-muted">Already Admin</span>'
+                                    </button>`
                                 }
                             </td>
                         `;
@@ -327,21 +347,30 @@
                 }
                 
                 document.getElementById('searchResults').style.display = 'block';
-                addMakeAdminListeners();
+                addSearchRoleListeners();
             } catch (error) {
                 console.error('Error searching users:', error);
                 alert('Error searching users');
             }
         });
 
-        function addMakeAdminListeners() {
-            document.querySelectorAll('.make-admin').forEach(btn => {
+        function addSearchRoleListeners() {
+            document.querySelectorAll('.make-admin-search').forEach(btn => {
                 btn.addEventListener('click', async function() {
                     if(confirm('Make this user an admin?\n\nThis will give them full administrative access to the system.')) {
                         await updateUserRole(this.dataset.userId, 'admin');
                         loadAdmins();
-                        document.getElementById('searchEmail').value = '';
-                        document.getElementById('searchResults').style.display = 'none';
+                        document.getElementById('searchButton').click();
+                    }
+                });
+            });
+
+            document.querySelectorAll('.remove-admin-search').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    if(confirm('Remove admin privileges from this user?\n\nThey will be demoted to moderator status.')) {
+                        await updateUserRole(this.dataset.userId, 'moderator');
+                        loadAdmins();
+                        document.getElementById('searchButton').click();
                     }
                 });
             });
@@ -353,6 +382,10 @@
                     if(confirm('Remove admin privileges from this user?\n\nThey will be demoted to moderator status.')) {
                         await updateUserRole(this.dataset.userId, 'moderator');
                         loadAdmins();
+                        // Also try to refresh search results if they exist
+                        if (document.getElementById('searchResults').style.display === 'block') {
+                            document.getElementById('searchButton').click();
+                        }
                     }
                 });
             });

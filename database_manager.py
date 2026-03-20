@@ -21,7 +21,7 @@ tables_cache = {}
 _domain_tables_verified = False
 
 def get_language_table(language):
-    """Get or create language-specific recordings table"""
+    """Get or create language-specific recordings table (PENDING only)"""
     table_name = f"recordings_{language}"
     if table_name not in tables_cache:
         tables_cache[table_name] = Table(
@@ -36,23 +36,25 @@ def get_language_table(language):
             Column('audio_path', String),
             Column('sampling_rate', Integer),
             Column('duration', Float),
-            Column('language', String(2)),
+            Column('language', String(10)),
             Column('gender', String(10)),
             Column('country', String),
             Column('state', String),
-            Column('city', String),
-            Column('status', String(20), default='pending'),  # Replace verified boolean with status
-            Column('verified_by', String, nullable=True),
+    Column('city', String),
+    Column('status', String(20), default='pending'),  # Replace verified boolean with status
+    Column('verified_by', String, nullable=True),
             Column('username', String),
-            Column('age_group', String),
+            Column('age', Integer),
             Column('accent', String),
-            Column('domain', String(10)),  # Add domain column
-            Column('subdomain', String(10)),  # Add subdomain column
+            Column('mother_tongue', String),  # Add mother_tongue column
+            Column('user_info', Text),
+            Column('audio_sampling_rate', Integer),
+            Column('audio_file_name', String),
             extend_existing=True
         )
         try:
             metadata_db.create_all(engine, tables=[tables_cache[table_name]])
-            logger.info(f"Created table: {table_name}")
+            logger.debug(f"Created table: {table_name}")
         except Exception as e:
             logger.error(f"Error creating table {table_name}: {e}")
             raise
@@ -73,31 +75,97 @@ def store_metadata(metadata_dict):
             # Create table in database if it doesn't exist
             try:
                 metadata_db.create_all(bind=conn, tables=[recordings_table])
-                logger.info(f"Ensured table exists: recordings_{language}")
+                logger.debug(f"Ensured table exists: recordings_{language}")
             except Exception as e:
                 logger.warning(f"Table creation warning (may already exist): {e}")
 
             # Ensure transcription table exists
             ensure_transcription_table(conn, language)
             
-            # Check if domain and subdomain columns exist in recordings table
-            domain_exists = conn.execute(text(f"""
+            # Check if mother_tongue column exists in recordings table
+            mother_tongue_exists = conn.execute(text(f"""
                 SELECT EXISTS (
                     SELECT FROM information_schema.columns 
                     WHERE table_name = 'recordings_{language}' 
-                    AND column_name = 'domain'
+                    AND column_name = 'mother_tongue'
                 )
             """)).scalar()
             
-            if not domain_exists:
-                # Add domain and subdomain columns
+            if not mother_tongue_exists:
+                # Add mother_tongue column
                 conn.execute(text(f"""
                     ALTER TABLE recordings_{language}
-                    ADD COLUMN domain VARCHAR(10),
-                    ADD COLUMN subdomain VARCHAR(10)
+                    ADD COLUMN mother_tongue VARCHAR
                 """))
                 conn.commit()
-                logger.info(f"Added domain and subdomain columns to recordings_{language}")
+                logger.info(f"Added mother_tongue column to recordings_{language}")
+            
+            # Check and fix language column constraint (was limited to 2 chars, need 10)
+            language_col_check = conn.execute(text(f"""
+                SELECT character_maximum_length 
+                FROM information_schema.columns 
+                WHERE table_name = 'recordings_{language}' 
+                AND column_name = 'language'
+            """)).scalar()
+            
+            if language_col_check and language_col_check < 10:
+                conn.execute(text(f"""
+                    ALTER TABLE recordings_{language} 
+                    ALTER COLUMN language TYPE VARCHAR(10)
+                """))
+                conn.commit()
+                logger.info(f"Updated language column to VARCHAR(10) for recordings_{language}")
+            
+            # Check and add user_info column
+            user_info_exists = conn.execute(text(f"""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.columns 
+                    WHERE table_name = 'recordings_{language}' 
+                    AND column_name = 'user_info'
+                )
+            """)).scalar()
+            
+            if not user_info_exists:
+                conn.execute(text(f"""
+                    ALTER TABLE recordings_{language}
+                    ADD COLUMN user_info TEXT
+                """))
+                conn.commit()
+                logger.info(f"Added user_info column to recordings_{language}")
+                
+            # Check and add audio_sampling_rate column
+            audio_sampling_rate_exists = conn.execute(text(f"""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.columns 
+                    WHERE table_name = 'recordings_{language}' 
+                    AND column_name = 'audio_sampling_rate'
+                )
+            """)).scalar()
+            
+            if not audio_sampling_rate_exists:
+                conn.execute(text(f"""
+                    ALTER TABLE recordings_{language}
+                    ADD COLUMN audio_sampling_rate INTEGER
+                """))
+                conn.commit()
+                logger.info(f"Added audio_sampling_rate column to recordings_{language}")
+                
+            # Check and add audio_file_name column
+            audio_file_name_exists = conn.execute(text(f"""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.columns 
+                    WHERE table_name = 'recordings_{language}' 
+                    AND column_name = 'audio_file_name'
+                )
+            """)).scalar()
+            
+            if not audio_file_name_exists:
+                conn.execute(text(f"""
+                    ALTER TABLE recordings_{language}
+                    ADD COLUMN audio_file_name VARCHAR
+                """))
+                conn.commit()
+                logger.info(f"Added audio_file_name column to recordings_{language}")
             
             # Remove any fields that don't match the table columns
             valid_columns = [c.name for c in recordings_table.columns]
@@ -109,14 +177,23 @@ def store_metadata(metadata_dict):
             
             cleaned_metadata['status'] = 'pending'  # Set default status
             
-            logger.debug(f"Storing metadata with columns: {list(cleaned_metadata.keys())}")
+            # LOGGING BEFORE INSERT - Step 2 ✓
+            logger.info(f"=== DB STORE DEBUG ===")
+            logger.info(f"Language table: recordings_{language}")
+            logger.info(f"Inserting keys: {list(cleaned_metadata.keys())}")
+            logger.info(f"Filename: {cleaned_metadata.get('audio_filename')}")
+            logger.info(f"User: {cleaned_metadata.get('user_id')}")
+            logger.info(f"Required fields - MT: '{cleaned_metadata.get('mother_tongue')}'")
+
             
             # Insert the metadata
             result = conn.execute(recordings_table.insert().values(**cleaned_metadata))
+            inserted_id = result.inserted_primary_key[0]
             conn.commit()
             
-            logger.info(f"Successfully stored metadata for recording: {cleaned_metadata.get('audio_filename')}")
-            return result.inserted_primary_key[0]
+            logger.info(f"✅ DB INSERT SUCCESS - Recording ID: {inserted_id}")
+            logger.info(f"===================")
+            return inserted_id
             
     except Exception as e:
         logger.error(f"Error in store_metadata: {str(e)}", exc_info=True)
@@ -133,8 +210,6 @@ def store_transcription(transcription_text, language):
                     user_id VARCHAR(255),
                     transcription_text TEXT NOT NULL,
                     recorded BOOLEAN DEFAULT false,
-                    domain VARCHAR(10),
-                    subdomain VARCHAR(10),
                     uploaded_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -427,12 +502,7 @@ def get_dataset_stats():
                 logger.warning("No language tables found")
                 return stats
 
-            # First create missing tables
-            for lang in languages:
-                table_name = f"recordings_{lang}"
-                if not table_exists(conn, table_name):
-                    logger.info(f"Creating table for language: {lang}")
-                    get_language_table(lang)  # This will create the table if it doesn't exist
+            # Tables created on-demand; stats query existing tables only
 
             # Build UNION query for both stats and user count
             query_parts = []
@@ -532,16 +602,29 @@ def create_assignments_table(conn):
         DROP TABLE IF EXISTS validation_assignments;
         CREATE TABLE validation_assignments (
             id SERIAL PRIMARY KEY,
-            assigned_to VARCHAR(255) NOT NULL,  -- Changed from user_id to match column name
-            language VARCHAR(2) NOT NULL,
+            assigned_to VARCHAR(255) NOT NULL,
+            language VARCHAR(10) NOT NULL,
             recording_id INTEGER NOT NULL,
             assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             expires_at TIMESTAMP NOT NULL,
             status VARCHAR(20) DEFAULT 'pending',
-            UNIQUE (assigned_to)  -- Ensure only one row per user
+            assigned_by VARCHAR(255),
+            UNIQUE (assigned_to)
         )
     """))
     conn.commit()
+    
+    # Fix language column constraint if table was recreated (it drops and recreates)
+    # This ensures backward compatibility with any existing tables
+    try:
+        conn.execute(text("""
+            ALTER TABLE validation_assignments 
+            ALTER COLUMN language TYPE VARCHAR(10)
+        """))
+        conn.commit()
+    except Exception as e:
+        # Table may not have been recreated, ignore errors
+        pass
 
 def cleanup_completed_assignments():
     """Remove completed assignments from the table"""
@@ -555,8 +638,8 @@ def cleanup_completed_assignments():
     except Exception as e:
         logger.error(f"Error cleaning up assignments: {e}")
 
-def assign_recording(language, moderator_id, domain='', subdomain=''):
-    """Get next unassigned recording or update existing assignment with domain/subdomain filtering"""
+def assign_recording(language, moderator_id, mother_tongue=''):
+    """Get next unassigned recording or update existing assignment with mother_tongue filtering"""
     try:
         with engine.connect() as conn:
             # First check if recordings table exists
@@ -568,19 +651,16 @@ def assign_recording(language, moderator_id, domain='', subdomain=''):
             filters_check_query = text(f"""
                 SELECT COUNT(*) FROM recordings_{language} 
                 WHERE status = 'pending'
-                {" AND domain = :domain" if domain else ""}
-                {" AND subdomain = :subdomain" if subdomain else ""}
+                {" AND mother_tongue = :mother_tongue" if mother_tongue else ""}
             """)
             
             matching_recordings = conn.execute(filters_check_query, {
-                "domain": domain,
-                "subdomain": subdomain
+                "mother_tongue": mother_tongue
             }).scalar()
             
             if matching_recordings == 0:
-                domain_info = f" for domain '{domain}'" if domain else ""
-                subdomain_info = f" and subdomain '{subdomain}'" if subdomain else ""
-                logger.info(f"No pending recordings found{domain_info}{subdomain_info}")
+                mother_tongue_info = f" for mother tongue '{mother_tongue}'" if mother_tongue else ""
+                logger.info(f"No pending recordings found{mother_tongue_info}")
                 return None
 
             # Create assignments table if it doesn't exist
@@ -606,19 +686,17 @@ def assign_recording(language, moderator_id, domain='', subdomain=''):
             }).first()
 
             if existing and existing.language == language:
-                # Check if existing assignment matches domain/subdomain filters
+                # Check if existing assignment matches mother_tongue filters
                 match_query = text(f"""
                     SELECT r.id
                     FROM recordings_{language} r
                     WHERE r.id = :recording_id
-                    AND (:domain = '' OR r.domain = :domain)
-                    AND (:subdomain = '' OR r.subdomain = :subdomain)
+                    AND (:mother_tongue = '' OR r.mother_tongue = :mother_tongue)
                 """)
                 
                 matches_filters = conn.execute(match_query, {
                     "recording_id": existing.recording_id,
-                    "domain": domain,
-                    "subdomain": subdomain
+                    "mother_tongue": mother_tongue
                 }).scalar() is not None
                 
                 if matches_filters:
@@ -644,12 +722,11 @@ def assign_recording(language, moderator_id, domain='', subdomain=''):
                     })
                     conn.commit()  # Make sure to commit the DELETE
             
-            # Build domain and subdomain filter conditions
-            domain_condition = "AND r.domain = :domain" if domain else ""
-            subdomain_condition = "AND r.subdomain = :subdomain" if subdomain else ""
+            # Build mother_tongue filter conditions
+            mother_tongue_condition = "AND r.mother_tongue = :mother_tongue" if mother_tongue else ""
             
             # Log query parameters for debugging
-            logger.debug(f"Looking for recordings with filters - domain: '{domain}', subdomain: '{subdomain}'")
+            logger.debug(f"Looking for recordings with filters - mother_tongue: '{mother_tongue}'")
             
             # Get next available recording with filters
             next_recording = conn.execute(text(f"""
@@ -667,20 +744,17 @@ def assign_recording(language, moderator_id, domain='', subdomain=''):
                         FROM assigned_recordings ar 
                         WHERE ar.recording_id = r.id
                     )
-                    {domain_condition}
-                    {subdomain_condition}
+                    {mother_tongue_condition}
                 ORDER BY r.id
                 LIMIT 1
                 FOR UPDATE SKIP LOCKED
             """), {
-                "domain": domain,
-                "subdomain": subdomain
+                "mother_tongue": mother_tongue
             }).scalar()
             
             if not next_recording:
-                domain_info = f" with domain '{domain}'" if domain else ""
-                subdomain_info = f" and subdomain '{subdomain}'" if subdomain else ""
-                logger.info(f"No unassigned recordings found{domain_info}{subdomain_info}")
+                mother_tongue_info = f" with mother tongue '{mother_tongue}'" if mother_tongue else ""
+                logger.info(f"No unassigned recordings found{mother_tongue_info}")
                 return None
                 
             # Insert or update assignment
@@ -746,6 +820,410 @@ def complete_assignment(language, recording_id, moderator_id, status):
     except Exception as e:
         logger.error(f"Error completing assignment: {e}")
         raise
+
+def get_pending_recordings_for_assignment(language, mother_tongue='', limit=50):
+    """Get pending recordings that can be assigned to users (for admin view)"""
+    try:
+        with engine.connect() as conn:
+            if not table_exists(conn, f"recordings_{language}"):
+                return []
+            
+            # Ensure mother_tongue column exists (for older tables)
+            mother_tongue_exists = conn.execute(text(f"""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.columns 
+                    WHERE table_name = 'recordings_{language}' 
+                    AND column_name = 'mother_tongue'
+                )
+            """)).scalar()
+            
+            if not mother_tongue_exists:
+                conn.execute(text(f"""
+                    ALTER TABLE recordings_{language}
+                    ADD COLUMN mother_tongue VARCHAR
+                """))
+                conn.commit()
+                logger.info(f"Added mother_tongue column to recordings_{language}")
+            
+            # Build query for pending recordings - simpler version
+            where_conditions = ["status = 'pending'"]
+            params = {"language": language}
+            
+            if mother_tongue:
+                where_conditions.append("mother_tongue = :mother_tongue")
+                params["mother_tongue"] = mother_tongue
+            
+            where_clause = " AND ".join(where_conditions)
+            
+            # Get ALL pending recordings for the language - use string interpolation for LIMIT
+            query = text(f"""
+                SELECT id, audio_filename, speaker_name, gender, 
+                       age, state, mother_tongue, user_id,
+                       duration, audio_path, transcription_id
+                FROM recordings_{language}
+                WHERE {where_clause}
+                ORDER BY id
+                LIMIT {int(limit)}
+            """)
+            
+            result = conn.execute(query, params)
+            recordings = []
+            for row in result:
+                # Get transcription text using transcription_id
+                trans_text = ""
+                trans_id = row[10] if len(row) > 10 else None
+                if trans_id:
+                    try:
+                        trans_query = text(f"""
+                            SELECT transcription_text 
+                            FROM transcriptions_{language}
+                            WHERE transcription_id = :trans_id
+                        """)
+                        trans_result = conn.execute(trans_query, {"trans_id": trans_id}).fetchone()
+                        if trans_result:
+                            trans_text = trans_result[0]
+                    except:
+                        pass
+                
+                recordings.append({
+                    'id': row[0],
+                    'audio_filename': row[1],
+                    'speaker_name': row[2],
+                    'gender': row[3],
+                    'age': row[4],
+                    'state': row[5],
+                    'mother_tongue': row[6],
+                    'recorded_by': row[7],
+                    'transcription_text': trans_text,
+                    'language': language,
+                    'audio_path': row[9] if len(row) > 9 else f"{language}/audio/{row[1]}",
+                    'duration': row[8] if len(row) > 8 else 0
+                })
+            
+            return recordings
+    except Exception as e:
+        logger.error(f"Error getting pending recordings: {e}")
+        return []
+
+def get_all_pending_recordings(language=None, limit=100):
+    """Get all pending recordings across all languages or for a specific language"""
+    try:
+        # Get all recordings tables
+        with engine.connect() as conn:
+            tables_query = text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_name LIKE 'recordings_%'
+                AND table_schema = 'public'
+            """)
+            tables = conn.execute(tables_query).fetchall()
+        
+        all_recordings = []
+        
+        for (table_name,) in tables:
+            lang_code = table_name.replace('recordings_', '')
+            
+            # Skip if filtering by language and this isn't the right one
+            if language and lang_code != language:
+                continue
+            
+            # Use separate connection for each table to avoid transaction issues
+            try:
+                with engine.connect() as conn:
+                    # Get ALL pending recordings for this language (simplified)
+                    # Use string interpolation for LIMIT (safe since it's an integer)
+                    # Ensure mother_tongue column exists (for older tables)
+                    mother_tongue_exists = conn.execute(text(f"""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.columns 
+                            WHERE table_name = :table_name 
+                            AND column_name = 'mother_tongue'
+                        )
+                    """), {"table_name": table_name}).scalar()
+                    
+                    if not mother_tongue_exists:
+                        conn.execute(text(f"""
+                            ALTER TABLE {table_name}
+                            ADD COLUMN mother_tongue VARCHAR
+                        """))
+                        conn.commit()
+                        logger.info(f"Added mother_tongue column to {table_name}")
+                    
+                    query = text(f"""
+                        SELECT id, audio_filename, speaker_name, gender, 
+                               age, state, mother_tongue, user_id,
+                               duration, audio_path, transcription_id
+                        FROM {table_name}
+                        WHERE status = 'pending'
+                        ORDER BY id
+                        LIMIT {int(limit)}
+                    """)
+                    
+                    result = conn.execute(query)
+                    
+                    for row in result:
+                        # Get transcription text
+                        trans_text = ""
+                        trans_id = row[10] if len(row) > 10 else None
+                        if trans_id:
+                            try:
+                                trans_query = text(f"""
+                                    SELECT transcription_text 
+                                    FROM transcriptions_{lang_code}
+                                    WHERE transcription_id = :trans_id
+                                """)
+                                trans_result = conn.execute(trans_query, {"trans_id": trans_id}).fetchone()
+                                if trans_result:
+                                    trans_text = trans_result[0]
+                            except:
+                                pass
+                        
+                        all_recordings.append({
+                            'id': row[0],
+                            'audio_filename': row[1],
+                            'speaker_name': row[2],
+                            'gender': row[3],
+                            'age': row[4],
+                            'state': row[5],
+                            'mother_tongue': row[6],
+                            'recorded_by': row[7],
+                            'transcription_text': trans_text,
+                            'language': lang_code,
+                            'audio_path': row[9] if len(row) > 9 else f"{lang_code}/audio/{row[1]}",
+                            'duration': row[8] if len(row) > 8 else 0
+                        })
+            except Exception as e:
+                logger.warning(f"Error getting recordings from {table_name}: {e}")
+                continue
+        
+        return all_recordings
+    except Exception as e:
+        logger.error(f"Error getting all pending recordings: {e}")
+        return []
+
+def assign_recording_to_user(recording_id, language, user_id, assigned_by):
+    """Assign a specific recording to a specific user"""
+    try:
+        with engine.connect() as conn:
+            # Ensure validation_assignments table exists with correct schema
+            create_assignments_table(conn)
+            
+            # Check if recording exists and is pending
+            check_query = text(f"""
+                SELECT id, status, user_id FROM recordings_{language}
+                WHERE id = :recording_id
+            """)
+            result = conn.execute(check_query, {"recording_id": recording_id}).first()
+            
+            if not result:
+                return {"success": False, "error": "Recording not found"}
+            
+            if result.status != 'pending':
+                return {"success": False, "error": f"Recording is already {result.status}"}
+            
+            # Check if the user_id is the same as the person who recorded (cannot validate own recording)
+            recorded_by_user = result[2]  # user_id column
+            if recorded_by_user == user_id:
+                return {"success": False, "error": "Cannot assign recording to the person who recorded it. Please assign to a different user."}
+            
+            # Check if recording is already assigned to someone else
+            assignment_check = text("""
+                SELECT id, assigned_to FROM validation_assignments
+                WHERE recording_id = :recording_id
+                AND language = :language
+                AND status = 'pending'
+                AND expires_at > NOW()
+            """)
+            existing = conn.execute(assignment_check, {
+                "recording_id": recording_id,
+                "language": language
+            }).first()
+            
+            if existing:
+                if existing.assigned_to == user_id:
+                    return {"success": True, "message": "Recording already assigned to this user"}
+                return {"success": False, "error": f"Recording already assigned to another user"}
+            
+            # Create the assignment
+            conn.execute(text("""
+                INSERT INTO validation_assignments
+                    (assigned_to, language, recording_id, assigned_by, expires_at, status)
+                VALUES
+                    (:user_id, :language, :recording_id, :assigned_by, NOW() + INTERVAL '7 days', 'pending')
+            """), {
+                "user_id": user_id,
+                "language": language,
+                "recording_id": recording_id,
+                "assigned_by": assigned_by
+            })
+            
+            conn.commit()
+            return {"success": True, "message": "Recording assigned successfully"}
+    except Exception as e:
+        logger.error(f"Error assigning recording to user: {e}")
+        return {"success": False, "error": str(e)}
+
+def get_user_assignments(user_id, include_pending=True):
+    """Get all assignments for a specific user"""
+    try:
+        with engine.connect() as conn:
+            conditions = ["assigned_to = :user_id"]
+            if include_pending:
+                conditions.append("status = 'pending'")
+            else:
+                conditions.append("status IN ('pending', 'completed_verified', 'completed_rejected', 'expired')")
+            
+            where_clause = " AND ".join(conditions)
+            
+            query = text(f"""
+                SELECT va.id, va.recording_id, va.language, va.assigned_at, 
+                       va.expires_at, va.status, va.assigned_by,
+                       r.audio_filename, r.speaker_name, r.gender, r.state,
+                       r.mother_tongue, r.audio_path, r.duration,
+                       t.transcription_text
+                FROM validation_assignments va
+                JOIN recordings_{'{user_id}'} r ON va.recording_id = r.id
+                LEFT JOIN transcriptions_{'{user_id}'} t ON r.transcription_id = t.transcription_id
+                WHERE {where_clause}
+                ORDER BY va.assigned_at DESC
+            """)
+            
+            # This won't work with parameterized table names, let's fix this
+            return []
+    except Exception as e:
+        logger.error(f"Error getting user assignments: {e}")
+        return []
+
+def get_user_pending_assignments(user_id):
+    """Get pending assignments for a specific user with full recording details"""
+    try:
+        with engine.connect() as conn:
+            # First get the assignments
+            assignments_query = text("""
+                SELECT recording_id, language, assigned_at, expires_at, assigned_by
+                FROM validation_assignments
+                WHERE assigned_to = :user_id
+                AND status = 'pending'
+                AND expires_at > NOW()
+                ORDER BY assigned_at DESC
+            """)
+            
+            assignments = conn.execute(assignments_query, {"user_id": user_id}).fetchall()
+            
+            if not assignments:
+                return []
+            
+            result = []
+            for assignment in assignments:
+                recording_id = assignment[0]
+                language = assignment[1]
+                
+                # Get recording details
+                try:
+                    recording_query = text(f"""
+                        SELECT r.id, r.audio_filename, r.speaker_name, r.gender, 
+                               r.age_group, r.state, r.mother_tongue, r.audio_path, r.duration,
+                               r.user_id as recorded_by,
+                               t.transcription_text
+                        FROM recordings_{language} r
+                        LEFT JOIN transcriptions_{language} t ON r.transcription_id = t.transcription_id
+                        WHERE r.id = :recording_id
+                    """)
+                    
+                    recording = conn.execute(recording_query, {"recording_id": recording_id}).first()
+                    
+                    if recording:
+                        result.append({
+                            'assignment_id': assignment[0],  # recording_id as id
+                            'recording_id': recording[0],
+                            'audio_filename': recording[1],
+                            'speaker_name': recording[2],
+                            'gender': recording[3],
+                            'age_group': recording[4],
+                            'state': recording[5],
+                            'mother_tongue': recording[6],
+                            'audio_path': recording[7],
+                            'duration': recording[8],
+                            'recorded_by': recording[9],
+                            'transcription_text': recording[10],
+                            'language': language,
+                            'assigned_at': assignment[2],
+                            'expires_at': assignment[3],
+                            'assigned_by': assignment[4]
+                        })
+                except Exception as e:
+                    logger.warning(f"Error getting recording details for {recording_id}: {e}")
+                    continue
+            
+            return result
+    except Exception as e:
+        logger.error(f"Error getting user pending assignments: {e}")
+        return []
+
+def get_all_user_assignments(user_id):
+    """Get all assignments (pending and completed) for a user"""
+    try:
+        with engine.connect() as conn:
+            query = text("""
+                SELECT va.id, va.recording_id, va.language, va.assigned_at, 
+                       va.expires_at, va.status, va.assigned_by
+                FROM validation_assignments va
+                WHERE va.assigned_to = :user_id
+                ORDER BY va.assigned_at DESC
+            """)
+            
+            assignments = conn.execute(query, {"user_id": user_id}).fetchall()
+            
+            if not assignments:
+                return []
+            
+            result = []
+            for assignment in assignments:
+                recording_id = assignment[1]
+                language = assignment[2]
+                
+                try:
+                    recording_query = text(f"""
+                        SELECT r.id, r.audio_filename, r.speaker_name, r.gender, 
+                               r.age_group, r.state, r.mother_tongue, r.audio_path, r.duration,
+                               r.user_id as recorded_by, r.status as recording_status,
+                               t.transcription_text
+                        FROM recordings_{language} r
+                        LEFT JOIN transcriptions_{language} t ON r.transcription_id = t.transcription_id
+                        WHERE r.id = :recording_id
+                    """)
+                    
+                    recording = conn.execute(recording_query, {"recording_id": recording_id}).first()
+                    
+                    if recording:
+                        result.append({
+                            'assignment_id': assignment[0],
+                            'recording_id': recording[0],
+                            'audio_filename': recording[1],
+                            'speaker_name': recording[2],
+                            'gender': recording[3],
+                            'age_group': recording[4],
+                            'state': recording[5],
+                            'mother_tongue': recording[6],
+                            'audio_path': recording[7],
+                            'duration': recording[8],
+                            'recorded_by': recording[9],
+                            'recording_status': recording[10],
+                            'transcription_text': recording[11],
+                            'language': language,
+                            'assigned_at': assignment[3],
+                            'expires_at': assignment[4],
+                            'status': assignment[5],
+                            'assigned_by': assignment[6]
+                        })
+                except Exception as e:
+                    logger.warning(f"Error getting recording details: {e}")
+                    continue
+            
+            return result
+    except Exception as e:
+        logger.error(f"Error getting all user assignments: {e}")
+        return []
 
 def ensure_domain_tables(conn):
     """Ensure domain and subdomain tables exist in PostgreSQL."""

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Validate Recordings - COILD Dhravani</title>
@@ -11,12 +12,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="{{ url_for('static', filename='country-states.js') }}"></script>
 </head>
+
 <body>
     <div class="container-fluid px-3">
         <!-- Navigation bar -->
         <div class="d-flex justify-content-between align-items-center pt-3 pb-3">
             <h4 class="mb-0" style="color: #1a73e8;">COILD Dhravani</h4>
             <div class="d-flex align-items-center gap-3">
+                {% if session.get('user') and session.get('user').role == 'admin' %}
+                <!-- Admin tabs -->
+                <div class="btn-group" role="group" id="viewTabs">
+                    <button type="button" class="btn btn-outline-primary active" id="validateTab" onclick="switchView('validate')">
+                        <i class="fas fa-check-circle me-1"></i> Validate
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="adminTab" onclick="switchView('admin')">
+                        <i class="fas fa-user-cog me-1"></i> Admin
+                    </button>
+                </div>
+                {% endif %}
                 <a href="{{ url_for('index') }}" class="btn btn-outline-primary">Back</a>
                 {% if enable_auth and session.get('user') %}
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">Logout</a>
@@ -24,128 +37,203 @@
             </div>
         </div>
 
-        <!-- Filters Panel - Moved to top -->
-        <div class="card mb-4 border-0">
-            <div class="card-body p-3">
-                <div class="row align-items-center">
-                    <div class="col-auto d-none d-md-block">
-                        <h5 class="filter-title mb-0">
-                            <i class="fas fa-sliders me-2"></i>Filters
-                        </h5>
-                    </div>
-                    <!-- Mobile filter toggle button -->
-                    <div class="col-12 d-md-none mb-2">
-                        <button class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center" 
-                                type="button" 
-                                data-bs-toggle="collapse" 
-                                data-bs-target="#filterCollapse" 
-                                aria-expanded="false" 
-                                aria-controls="filterCollapse">
-                            <span><i class="fas fa-sliders me-2"></i>Filters</span>
-                            <i class="fas fa-chevron-down filter-chevron"></i>
-                        </button>
-                    </div>
-                    <div class="col-12 col-md-auto flex-grow-1">
-                        <!-- Collapsible container for mobile -->
-                        <div class="collapse d-md-block" id="filterCollapse">
-                            <form id="filterForm" class="row g-3 align-items-center flex-nowrap mobile-filter-form">
-                                <!-- Language Filter -->
-                                <div class="col filter-item">
-                                    <label class="filter-mobile-label d-md-none">Language</label>
-                                    <div class="filter-select">
-                                        <select class="form-control" id="language" name="language" required>
-                                            <option value="">Select Language *</option>
-                                            {% for lang in languages %}
-                                            <option value="{{ lang.code }}">{{ lang.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <i class="fas fa-chevron-down select-arrow"></i>
-                                    </div>
-                                </div>
-
-                                <!-- Add Domain Filter -->
-                                <div class="col filter-item">
-                                    <label class="filter-mobile-label d-md-none">Domain</label>
-                                    <div class="filter-select">
-                                        <select class="form-control" id="domain" name="domain">
-                                            <!-- Will be populated by JavaScript -->
-                                        </select>
-                                        <i class="fas fa-chevron-down select-arrow"></i>
-                                    </div>
-                                </div>
-
-                                <!-- Add Subdomain Filter -->
-                                <div class="col filter-item">
-                                    <label class="filter-mobile-label d-md-none">Subdomain</label>
-                                    <div class="filter-select">
-                                        <select class="form-control" id="subdomain" name="subdomain" disabled>
-                                            <option value="">Select Domain First</option>
-                                        </select>
-                                        <i class="fas fa-chevron-down select-arrow"></i>
-                                    </div>
-                                </div>
-
-                                <div class="col-12 col-md-auto mt-3 mt-md-0">
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="fas fa-filter me-2"></i>Apply
-                                    </button>
-                                </div>
-                            </form>
+        <!-- Validation View -->
+        <div id="validateView">
+            <!-- Filters Panel -->
+            <div class="card mb-4 border-0">
+                <div class="card-body p-3">
+                    <div class="row align-items-center">
+                        <div class="col-auto d-none d-md-block">
+                            <h5 class="filter-title mb-0">
+                                <i class="fas fa-sliders me-2"></i>Filters
+                            </h5>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+                        <!-- Mobile filter toggle button -->
+                        <div class="col-12 d-md-none mb-2">
+                            <button class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center"
+                                type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse"
+                                aria-expanded="false" aria-controls="filterCollapse">
+                                <span><i class="fas fa-sliders me-2"></i>Filters</span>
+                                <i class="fas fa-chevron-down filter-chevron"></i>
+                            </button>
+                        </div>
+                        <div class="col-12 col-md-auto flex-grow-1">
+                            <!-- Collapsible container for mobile -->
+                            <div class="collapse d-md-block" id="filterCollapse">
+                                <form id="filterForm" class="row g-3 align-items-center flex-nowrap mobile-filter-form">
+                                    <!-- Language Filter -->
+                                    <div class="col filter-item">
+                                        <label class="filter-mobile-label d-md-none">Language</label>
+                                        <div class="filter-select">
+                                            <select class="form-control" id="language" name="language" required>
+                                                <option value="">Select Language *</option>
+                                                {% for lang in languages %}
+                                                <option value="{{ lang.code }}">{{ lang.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <i class="fas fa-chevron-down select-arrow"></i>
+                                        </div>
+                                    </div>
 
-        <!-- Main Content -->
-        <div class="card border-0">
-            <div id="validateRecordings">
-                <!-- Single Recording View -->
-                <div id="singleRecordingView" class="single-recording-view">
-                    <div id="noRecordingMessage" class="no-recordings" style="display: none;">
-                        <i class="fas fa-check-circle"></i>
-                        <h5>No recordings to validate</h5>
-                        <p>All recordings have been reviewed for the selected language.</p>
-                    </div>
+                                    <!-- Mother Tongue Filter -->
+                                    <div class="col filter-item">
+                                        <label class="filter-mobile-label d-md-none">Mother Tongue</label>
+                                        <div class="filter-select">
+                                            <select class="form-control" id="mother_tongue" name="mother_tongue">
+                                                <option value="">All Mother Tongues</option>
+                                                <option value="Hindi">Hindi</option>
+                                                <option value="English">English</option>
+                                                <option value="Bengali">Bengali</option>
+                                                <option value="Telugu">Telugu</option>
+                                                <option value="Marathi">Marathi</option>
+                                                <option value="Tamil">Tamil</option>
+                                                <option value="Urdu">Urdu</option>
+                                                <option value="Gujarati">Gujarati</option>
+                                                <option value="Kannada">Kannada</option>
+                                                <option value="Odia">Odia</option>
+                                                <option value="Malayalam">Malayalam</option>
+                                                <option value="Punjabi">Punjabi</option>
+                                                <option value="Assamese">Assamese</option>
+                                                <option value="Maithili">Maithili</option>
+                                                <option value="Santali">Santali</option>
+                                                <option value="Kashmiri">Kashmiri</option>
+                                                <option value="Nepali">Nepali</option>
+                                                <option value="Sindhi">Sindhi</option>
+                                                <option value="Konkani">Konkani</option>
+                                                <option value="Dogri">Dogri</option>
+                                                <option value="Bodo">Bodo</option>
+                                                <option value="OTHER">Other...</option>
+                                            </select>
+                                            <i class="fas fa-chevron-down select-arrow"></i>
+                                        </div>
+                                    </div>
+                                    <div class="col mt-2 d-none" id="customMotherTongueContainer">
+                                        <input type="text" class="form-control" id="customMotherTongue"
+                                            name="customMotherTongue" placeholder="Enter Mother Tongue">
+                                    </div>
 
-                    <div id="recordingContent" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <div class="speaker-info-container">
-                                <span class="badge bg-primary" id="speakerInfo"></span>
-                                <span class="badge bg-info" id="genderInfo"></span>
-                                <span class="badge bg-secondary" id="ageInfo"></span>
-                                <span class="badge bg-light text-dark" id="stateInfo"></span>
-                                <span class="badge bg-accent" id="accentInfo"></span>
-                                <span class="badge bg-success" id="domainInfo"></span>
-                                <span class="badge bg-warning text-dark" id="subdomainInfo"></span>
+                                    <div class="col-12 col-md-auto mt-3 mt-md-0">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-filter me-2"></i>Apply
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Add tooltip to audio player -->
-                        <div class="audio-player mb-4">
-                            <audio controls class="w-100" preload="auto" 
-                                   data-bs-toggle="tooltip" data-bs-placement="top" 
-                                   title="Press 'Space' to Play/Pause"></audio>
+            <!-- Main Content -->
+            <div class="card border-0">
+                <div id="validateRecordings">
+                    <!-- Single Recording View -->
+                    <div id="singleRecordingView" class="single-recording-view">
+                        <div id="noRecordingMessage" class="no-recordings" style="display: none;">
+                            <i class="fas fa-check-circle"></i>
+                            <h5>No recordings to validate</h5>
+                            <p>All recordings have been reviewed for the selected language.</p>
                         </div>
 
-                        <div class="transcript-box mb-4">
-                            <div class="p-2 bg-light rounded" id="transcriptionText"></div>
-                        </div>
+                        <div id="recordingContent" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="speaker-info-container">
+                                    <span class="badge bg-primary" id="speakerInfo"></span>
+                                    <span class="badge bg-info" id="genderInfo"></span>
+                                    <span class="badge bg-secondary" id="ageInfo"></span>
+                                    <span class="badge bg-light text-dark" id="stateInfo"></span>
+                                    <span class="badge bg-accent" id="accentInfo"></span>
+                                    <span class="badge bg-success" id="motherTongueInfo"></span>
+                                    <span class="badge bg-warning text-dark" id="assignedBadge" style="display: none;">
+                                        <i class="fas fa-user-plus me-1"></i>Assigned to You
+                                    </span>
+                                </div>
+                            </div>
 
-                        <div class="validation-actions">
-                            <button class="btn btn-success" onclick="verifyRecording(true)" 
+                            <!-- Add tooltip to audio player -->
+                            <div class="audio-player mb-4">
+                                <audio controls class="w-100" preload="auto" data-bs-toggle="tooltip"
+                                    data-bs-placement="top" title="Press 'Space' to Play/Pause"></audio>
+                            </div>
+
+                            <div class="transcript-box mb-4">
+                                <div class="p-2 bg-light rounded" id="transcriptionText"></div>
+                            </div>
+
+                            <div class="validation-actions">
+                                <button class="btn btn-success" onclick="verifyRecording(true)"
                                     title="Accept Recording (A)">
-                                <i class="fas fa-check me-2"></i>Accept
-                            </button>
-                            <button class="btn btn-danger" onclick="verifyRecording(false)"
+                                    <i class="fas fa-check me-2"></i>Accept
+                                </button>
+                                <button class="btn btn-danger" onclick="verifyRecording(false)"
                                     title="Reject Recording (R)">
-                                <i class="fas fa-times me-2"></i>Reject
-                            </button>
+                                    <i class="fas fa-times me-2"></i>Reject
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Admin View -->
+        {% if session.get('user') and session.get('user').role == 'admin' %}
+        <div id="adminView" style="display: none;">
+            <div class="card border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-user-cog me-2"></i>Assign Recordings to Users</h5>
+                    <p class="text-muted">Select a recording and assign it to a user (NOT the person who recorded it).</p>
+                    
+                    <!-- Admin Filters -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Language</label>
+                            <select class="form-control" id="adminLanguage">
+                                <option value="">All Languages</option>
+                                {% for lang in languages %}
+                                <option value="{{ lang.code }}">{{ lang.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <button class="btn btn-primary w-100" onclick="loadPendingRecordings()">
+                                <i class="fas fa-search me-2"></i>Load Pending
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Pending Recordings List -->
+                    <div id="adminRecordingsLoading" class="text-center p-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div id="pendingRecordingsList" class="list-group mt-3" style="max-height: 400px; overflow-y: auto;"></div>
+                    
+                    <div id="noPendingRecordings" class="text-center p-4" style="display: none;">
+                        <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+                        <p class="mt-3 text-muted">No pending recordings available to assign.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User List View -->
+            <div class="card border-0">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-users me-2"></i>Validators</h5>
+                    <p class="text-muted">List of users who can validate recordings.</p>
+                    
+                    <button class="btn btn-info mb-3" onclick="loadUsers()">
+                        <i class="fas fa-users me-2"></i>Load Validators
+                    </button>
+                    
+                    <div id="usersList" class="list-group mt-3"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Add keyboard shortcuts help modal -->
         <div class="modal fade" id="shortcutsModal" tabindex="-1">
@@ -169,11 +257,33 @@
                                 <kbd>R</kbd>
                                 <span>Reject recording</span>
                             </div>
-                            <div class="shortcut-item">
-                                <kbd>?</kbd>
-                                <span>Show/hide keyboard shortcuts</span>
-                            </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assign Modal -->
+        <div class="modal fade" id="assignModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Assign Recording to User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="assignRecordingInfo" class="mb-3"></p>
+                        <div class="alert alert-warning" id="recordedByWarning" style="display: none;"></div>
+                        <div class="mb-3">
+                            <label class="form-label">Select User</label>
+                            <select class="form-control" id="assignUserSelect">
+                                <option value="">Loading users...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="confirmAssign()">Assign</button>
                     </div>
                 </div>
             </div>
@@ -181,35 +291,233 @@
 
         <!-- Include Bootstrap JS for modal -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-        
+
         <script>
             let currentRecording = null;
-            
+            let currentView = 'validate';
+            let pendingRecordings = [];
+            let validators = [];
+            let selectedRecordingForAssign = null;
+            let recordedByUserId = null;
+
+            // Get user role from session
+            const userRole = "{{ session.get('user', {}).get('role', '') }}";
+            const isAdmin = userRole === 'admin';
+
+            // View switching
+            function switchView(view) {
+                currentView = view;
+                
+                // Update tab buttons
+                document.getElementById('validateTab').classList.remove('active');
+                if (document.getElementById('adminTab')) {
+                    document.getElementById('adminTab').classList.remove('active');
+                }
+                
+                document.getElementById(view + 'Tab').classList.add('active');
+                
+                // Show/hide views
+                document.getElementById('validateView').style.display = view === 'validate' ? 'block' : 'none';
+                if (document.getElementById('adminView')) {
+                    document.getElementById('adminView').style.display = view === 'admin' ? 'block' : 'none';
+                }
+                
+                // Load data for admin view
+                if (view === 'admin' && isAdmin) {
+                    loadPendingRecordings();
+                    loadUsers();
+                }
+            }
+
+            // Admin: Load pending recordings
+            async function loadPendingRecordings() {
+                const language = document.getElementById('adminLanguage').value;
+                const loading = document.getElementById('adminRecordingsLoading');
+                const list = document.getElementById('pendingRecordingsList');
+                const noRecordings = document.getElementById('noPendingRecordings');
+                
+                loading.style.display = 'block';
+                list.innerHTML = '';
+                noRecordings.style.display = 'none';
+                
+                try {
+                    let url = '/validation/api/pending_recordings?limit=50';
+                    if (language) url += `&language=${language}`;
+                    
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    loading.style.display = 'none';
+                    
+                    if (data.recordings && data.recordings.length > 0) {
+                        pendingRecordings = data.recordings;
+                        data.recordings.forEach(recording => {
+                            const item = document.createElement('div');
+                            item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            item.innerHTML = `
+                                <div>
+                                    <strong>${recording.speaker_name || 'Unknown'}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        ID: ${recording.id} | 
+                                        Language: ${recording.language} | 
+                                        Gender: ${recording.gender || 'N/A'} |
+                                        Recorded by: ${recording.recorded_by ? recording.recorded_by.substring(0, 10) + '...' : 'N/A'}
+                                    </small>
+                                </div>
+                                <button class="btn btn-sm btn-primary" onclick="openAssignModal(${recording.id}, '${recording.language}', '${recording.speaker_name || 'Unknown'}', '${recording.recorded_by || ''}')">
+                                    <i class="fas fa-user-plus me-1"></i>Assign
+                                </button>
+                            `;
+                            list.appendChild(item);
+                        });
+                        list.style.display = 'block';
+                    } else {
+                        noRecordings.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Error loading pending recordings:', error);
+                    loading.style.display = 'none';
+                    noRecordings.style.display = 'block';
+                }
+            }
+
+            // Admin: Load users
+            async function loadUsers() {
+                try {
+                    const response = await fetch('/validation/api/users');
+                    const data = await response.json();
+                    
+                    console.log('Users response:', data);
+                    
+                    if (data.users) {
+                        validators = data.users;
+                        const list = document.getElementById('usersList');
+                        list.innerHTML = '';
+                        
+                        data.users.forEach(user => {
+                            // Use email as display name if name is empty or whitespace
+                            const displayName = (user.name && user.name.trim()) ? user.name : user.email;
+                            const item = document.createElement('div');
+                            item.className = 'list-group-item';
+                            item.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>${displayName}</strong>
+                                        <br>
+                                        <small class="text-muted">${user.email} (ID: ${user.id ? user.id.substring(0,8) : 'N/A'})</small>
+                                    </div>
+                                    <span class="badge bg-${user.role === 'admin' ? 'danger' : 'info'}">${user.role}</span>
+                                </div>
+                            `;
+                            list.appendChild(item);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading users:', error);
+                }
+            }
+
+            // Admin: Open assign modal
+            async function openAssignModal(recordingId, language, speakerName, recordedBy) {
+                selectedRecordingForAssign = { id: recordingId, language: language };
+                recordedByUserId = recordedBy;
+                
+                // Always load fresh users when opening modal
+                await loadUsers();
+                
+                document.getElementById('assignRecordingInfo').textContent = 
+                    `Recording: ${speakerName} (ID: ${recordingId}, Language: ${language})`;
+                
+                // Show warning about who recorded it
+                const warningEl = document.getElementById('recordedByWarning');
+                if (recordedBy) {
+                    warningEl.textContent = `Note: This recording was made by user ${recordedBy.substring(0, 10)}... You cannot assign it to this person.`;
+                    warningEl.style.display = 'block';
+                } else {
+                    warningEl.style.display = 'none';
+                }
+                
+                // Populate user select - show ALL users
+                const select = document.getElementById('assignUserSelect');
+                
+                if (validators.length > 0) {
+                    // Show all users, but highlight the one who recorded it
+                    select.innerHTML = '<option value="">-- Select a user to assign --</option>';
+                    validators.forEach(u => {
+                        const isRecorder = recordedBy && (u.id === recordedBy || u.id.startsWith(recordedBy.substring(0, 8)));
+                        select.innerHTML += `<option value="${u.id}" ${isRecorder ? 'disabled' : ''}>
+                            ${u.name || u.email} (${u.role})${isRecorder ? ' - [Cannot assign to recorder]' : ''}
+                        </option>`;
+                    });
+                } else {
+                    select.innerHTML = '<option value="">No users found</option>';
+                }
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('assignModal'));
+                modal.show();
+            }
+
+            // Admin: Confirm assignment
+            async function confirmAssign() {
+                const userId = document.getElementById('assignUserSelect').value;
+                if (!userId) {
+                    alert('Please select a user');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/validation/api/assign', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            recording_id: selectedRecordingForAssign.id,
+                            language: selectedRecordingForAssign.language,
+                            user_id: userId
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        alert('Recording assigned successfully!');
+                        bootstrap.Modal.getInstance(document.getElementById('assignModal')).hide();
+                        loadPendingRecordings();
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to assign recording'));
+                    }
+                } catch (error) {
+                    console.error('Error assigning recording:', error);
+                    alert('Error assigning recording');
+                }
+            }
+
             // Initialize tooltips
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
                 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                     return new bootstrap.Tooltip(tooltipTriggerEl, {
-                        trigger: 'hover'  // Show tooltip on hover
+                        trigger: 'hover'
                     })
                 })
             });
 
             // Update keyboard event listener
-            document.addEventListener('keydown', function(event) {
-                if (!currentRecording) return;
-                
+            document.addEventListener('keydown', function (event) {
+                if (!currentRecording || currentView !== 'validate') return;
+
                 // Ignore keyboard shortcuts if user is typing in an input or textarea
                 if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
-                
+
                 // Ignore if focus is on a button
                 if (event.target.tagName === 'BUTTON') return;
-                
+
                 const audio = document.querySelector('#recordingContent audio');
-                
-                switch(event.key.toLowerCase()) {
+
+                switch (event.key.toLowerCase()) {
                     case ' ': // Space key
-                        event.preventDefault(); // Prevent space from triggering buttons
+                        event.preventDefault();
                         if (audio.paused) {
                             audio.play();
                         } else {
@@ -228,100 +536,52 @@
             });
 
             // Add diagnostic logging function
-            function logFilterSelection(language, domain, subdomain) {
-                console.log(`Applied filters - Language: ${language || 'All'}, Domain: ${domain || 'All'}, Subdomain: ${subdomain || 'All'}`);
+            function logFilterSelection(language, mother_tongue) {
+                console.log(`Applied filters - Language: ${language || 'All'}, Mother Tongue: ${mother_tongue || 'All'}`);
             }
 
             // Update the filter form submission handler with logging
             document.getElementById('filterForm').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const language = document.getElementById('language').value;
-                const domain = document.getElementById('domain').value;
-                const subdomain = document.getElementById('subdomain').value;
-                
-                logFilterSelection(language, domain, subdomain);
-                
+                const mother_tongue = document.getElementById('mother_tongue').value === 'OTHER'
+                    ? document.getElementById('customMotherTongue').value
+                    : document.getElementById('mother_tongue').value;
+
+                logFilterSelection(language, mother_tongue);
+
                 if (language) {
                     loadNextRecording();
                 }
             });
 
-            async function loadDomains() {
-                try {
-                    const response = await fetch('/domains');
-                    const data = await response.json();
-                    
-                    const domainSelect = document.getElementById('domain');
-                    domainSelect.innerHTML = '<option value="">All Domains</option>'; // Option to not filter by domain
-                    
-                    if (data.status === 'success' && data.domains) {
-                        // Add domain options
-                        Object.entries(data.domains).forEach(([code, name]) => {
-                            const option = document.createElement('option');
-                            option.value = code;
-                            option.textContent = `${name} (${code})`;
-                            domainSelect.appendChild(option);
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error loading domains:', error);
+            // Handle switching to OTHER for mother tongue
+            document.getElementById('mother_tongue').addEventListener('change', function () {
+                const customInput = document.getElementById('customMotherTongueContainer');
+                if (this.value === 'OTHER') {
+                    customInput.classList.remove('d-none');
+                } else {
+                    customInput.classList.add('d-none');
+                    document.getElementById('customMotherTongue').value = '';
                 }
-            }
-
-            async function loadSubdomains(domainCode) {
-                try {
-                    const subdomainSelect = document.getElementById('subdomain');
-                    
-                    if (!domainCode) {
-                        subdomainSelect.innerHTML = '<option value="">All Subdomains</option>';
-                        subdomainSelect.disabled = true;
-                        return;
-                    }
-                    
-                    subdomainSelect.innerHTML = '<option value="">Loading...</option>';
-                    subdomainSelect.disabled = true;
-                    
-                    const response = await fetch(`/domains/${domainCode}/subdomains`);
-                    const data = await response.json();
-                    
-                    subdomainSelect.innerHTML = '<option value="">All Subdomains</option>'; // Option to not filter by subdomain
-                    
-                    if (data.status === 'success' && data.subdomains) {
-                        data.subdomains.forEach(subdomain => {
-                            const option = document.createElement('option');
-                            option.value = subdomain.mnemonic;
-                            option.textContent = `${subdomain.name} (${subdomain.mnemonic})`;
-                            subdomainSelect.appendChild(option);
-                        });
-                        
-                        subdomainSelect.disabled = false;
-                    }
-                } catch (error) {
-                    console.error('Error loading subdomains:', error);
-                    const subdomainSelect = document.getElementById('subdomain');
-                    subdomainSelect.innerHTML = '<option value="">Error loading</option>';
-                }
-            }
+            });
 
             async function loadNextRecording() {
                 try {
                     const language = document.getElementById('language').value;
-                    const domain = document.getElementById('domain').value;
-                    const subdomain = document.getElementById('subdomain').value;
-                    
-                    // Skip the API call if no language is selected yet
-                    if (!language) return;
-                    
-                    logFilterSelection(language, domain, subdomain);
+                    const mother_tongue = document.getElementById('mother_tongue').value === 'OTHER'
+                        ? document.getElementById('customMotherTongue').value
+                        : document.getElementById('mother_tongue').value;
 
-                    // Build the URL with query parameters for domain and subdomain
+                    if (!language) return;
+
+                    logFilterSelection(language, mother_tongue);
+
                     let url = `/validation/api/next_recording?language=${language}`;
-                    if (domain) url += `&domain=${domain}`;
-                    if (subdomain) url += `&subdomain=${subdomain}`;
+                    if (mother_tongue) url += `&mother_tongue=${mother_tongue}`;
 
                     console.log(`Requesting recordings with URL: ${url}`);
 
-                    // Show loading state
                     document.getElementById('recordingContent').innerHTML = `
                         <div class="text-center p-5">
                             <div class="spinner-border text-primary" role="status">
@@ -333,16 +593,15 @@
 
                     const response = await fetch(url);
                     const data = await response.json();
-                    
+
                     if (!response.ok) {
                         throw new Error(data.error || 'Failed to load recording');
                     }
-                    
+
                     if (data.status === 'no_recordings') {
                         let message = 'No recordings available for validation';
-                        if (domain) message += ` in domain "${domain}"`;
-                        if (subdomain) message += ` and subdomain "${subdomain}"`;
-                        
+                        if (mother_tongue) message += ` in mother tongue "${mother_tongue}"`;
+
                         document.getElementById('noRecordingMessage').innerHTML = `
                             <i class="fas fa-check-circle"></i>
                             <h5>No recordings to validate</h5>
@@ -353,7 +612,7 @@
                         currentRecording = null;
                         return;
                     }
-                    
+
                     currentRecording = data.recording;
                     if (!currentRecording || !currentRecording.audio_path) {
                         throw new Error('Invalid recording data received');
@@ -361,7 +620,7 @@
 
                     document.getElementById('noRecordingMessage').style.display = 'none';
                     document.getElementById('recordingContent').style.display = 'block';
-                    
+
                     // Reset the content
                     document.getElementById('recordingContent').innerHTML = `
                         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -371,8 +630,10 @@
                                 <span class="badge bg-secondary" id="ageInfo"></span>
                                 <span class="badge bg-light text-dark" id="stateInfo"></span>
                                 <span class="badge bg-accent" id="accentInfo"></span>
-                                <span class="badge bg-success" id="domainInfo"></span>
-                                <span class="badge bg-warning text-dark" id="subdomainInfo"></span>
+                                <span class="badge bg-success" id="motherTongueInfo"></span>
+                                <span class="badge bg-warning text-dark" id="assignedBadge" style="display: none;">
+                                    <i class="fas fa-user-plus me-1"></i>Assigned to You
+                                </span>
                             </div>
                         </div>
 
@@ -397,40 +658,37 @@
                             </button>
                         </div>
                     `;
-                    
-                    // Update UI with recording details
+
                     const audio = document.querySelector('#recordingContent audio');
                     audio.src = `/validation/api/audio/${currentRecording.audio_path}`;
-                    
-                    document.getElementById('transcriptionText').textContent = 
+
+                    document.getElementById('transcriptionText').textContent =
                         currentRecording.transcription_text || 'No transcription available';
-                    document.getElementById('speakerInfo').textContent = 
+                    document.getElementById('speakerInfo').textContent =
                         `${currentRecording.speaker_name || 'Unknown'}`;
-                    document.getElementById('genderInfo').textContent = 
+                    document.getElementById('genderInfo').textContent =
                         currentRecording.gender || 'Gender: Unknown';
-                    document.getElementById('ageInfo').textContent = 
+                    document.getElementById('ageInfo').textContent =
                         currentRecording.age_group || 'Age: Unknown';
-                    document.getElementById('stateInfo').textContent = 
+                    document.getElementById('stateInfo').textContent =
                         currentRecording.state || 'State: Unknown';
-                    document.getElementById('accentInfo').textContent = 
+                    document.getElementById('accentInfo').textContent =
                         currentRecording.accent || 'Accent: Unknown';
-                    
-                    // Add domain and subdomain information
-                    if (currentRecording.domain) {
-                        document.getElementById('domainInfo').textContent = `Domain: ${currentRecording.domain}`;
-                        document.getElementById('domainInfo').style.display = 'inline-block';
+
+                    if (currentRecording.mother_tongue) {
+                        document.getElementById('motherTongueInfo').textContent = `Mother Tongue: ${currentRecording.mother_tongue}`;
+                        document.getElementById('motherTongueInfo').style.display = 'inline-block';
                     } else {
-                        document.getElementById('domainInfo').style.display = 'none';
+                        document.getElementById('motherTongueInfo').style.display = 'none';
                     }
                     
-                    if (currentRecording.subdomain) {
-                        document.getElementById('subdomainInfo').textContent = `Subdomain: ${currentRecording.subdomain}`;
-                        document.getElementById('subdomainInfo').style.display = 'inline-block';
+                    // Show assigned badge if recording is assigned to user
+                    if (data.is_assigned) {
+                        document.getElementById('assignedBadge').style.display = 'inline-block';
                     } else {
-                        document.getElementById('subdomainInfo').style.display = 'none';
+                        document.getElementById('assignedBadge').style.display = 'none';
                     }
-                    
-                    // Re-initialize tooltips
+
                     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
                     tooltipTriggerList.map(function (tooltipTriggerEl) {
                         return new bootstrap.Tooltip(tooltipTriggerEl, {
@@ -452,82 +710,46 @@
 
             async function verifyRecording(isAccepted) {
                 if (!currentRecording) return;
-                
-                // Store references to all needed elements at the start
+
                 const actionButton = document.querySelector(isAccepted ? '.btn-success' : '.btn-danger');
                 const allButtons = document.querySelectorAll('.validation-actions button');
                 const originalText = actionButton.innerHTML;
-                
+
                 try {
-                    // Disable all buttons while processing
                     allButtons.forEach(btn => btn.disabled = true);
-                    
-                    // Show loading state
+
                     const actionText = isAccepted ? 'Accepting' : 'Rejecting';
                     actionButton.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${actionText}...`;
-                    
+
                     const response = await fetch(`/validation/api/verify/${currentRecording.audio_path}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ verify: isAccepted })
                     });
-                    
+
                     if (!response.ok) throw new Error('Verification failed');
-                    
-                    // Load next recording
+
                     await loadNextRecording();
                 } catch (error) {
                     console.error('Error verifying recording:', error);
                     alert('Error verifying recording. Please try again.');
                 } finally {
-                    // Re-enable all buttons and restore original text
                     allButtons.forEach(btn => btn.disabled = false);
                     actionButton.innerHTML = originalText;
                 }
             }
-
-            // Add domain change handler
-            document.getElementById('domain').addEventListener('change', function() {
-                loadSubdomains(this.value);
-            });
-
-            // Initial load
-            document.addEventListener('DOMContentLoaded', function() {
-                const languageSelect = document.getElementById('language');
-                
-                // Get user's default language
-                const userDataElem = document.getElementById('validatorUserData');
-                let userLanguage = '';
-                if (userDataElem) {
-                    try {
-                        const userData = JSON.parse(userDataElem.textContent);
-                        userLanguage = userData.language;
-                    } catch (e) {
-                        console.error('Error parsing user data:', e);
-                    }
-                }
-                
-                // Set default language if available and trigger load
-                if (userLanguage && languageSelect) {
-                    languageSelect.value = userLanguage;
-                    // Only trigger if a language is selected
-                    if (languageSelect.value) {
-                        loadNextRecording();
-                    }
-                }
-
-                // Load domains
-                loadDomains();
-            });
         </script>
 
         {% if session.get('user') %}
         <script type="application/json" id="validatorUserData">
             {
-                "language": "{{ session.user.language|default('') }}"
+                "language": "{{ session.user.language|default('') }}",
+                "role": "{{ session.user.role|default('') }}"
             }
         </script>
         {% endif %}
     </div>
 </body>
+
 </html>
+

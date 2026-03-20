@@ -10,7 +10,12 @@ from database_manager import (
     engine, 
     assign_recording,
     complete_assignment,
-    table_exists  # Add this import
+    table_exists,
+    get_pending_recordings_for_assignment,
+    get_all_pending_recordings,
+    assign_recording_to_user,
+    get_user_pending_assignments,
+    get_all_user_assignments
 )
 from sqlalchemy import text
 import os
@@ -37,32 +42,41 @@ def validate():
         # Get user from session
         user = session.get('user', {})
         
+        # Check if user has valid ID
+        if not user.get('id'):
+            logger.error("User session missing ID")
+            return render_template('error.html', 
+                                error_code=403,
+                                error_message="Invalid session. Please login again."), 403
+        
         # Update user role from PocketBase only when accessing validation interface
         try:
-            pb_user = current_app.pb.collection('users').get_one(user['id'])
-            # Update session with latest role
-            user['role'] = getattr(pb_user, 'role', user.get('role', ''))
-            user['is_moderator'] = user['role'] in ['moderator', 'admin']
-            session['user'] = user
+            if hasattr(current_app, 'pb') and current_app.pb:
+                pb_user = current_app.pb.collection('users').get_one(user['id'])
+                # Update session with latest role
+                user['role'] = getattr(pb_user, 'role', user.get('role', ''))
+                user['is_moderator'] = user['role'] in ['moderator', 'admin']
+                session['user'] = user
         except Exception as e:
             logger.error(f"Error updating user role: {e}")
             # Continue with existing session data if PocketBase update fails
             pass
 
-        # Check moderator access with updated session data
-        if not user.get('is_moderator', False):
-            return render_template('error.html', 
-                                error_code=403,
-                                error_message="You don't have permission to access this page"), 403
+        # Check if user has access:
+        # - Admin/Moderator: Full access to validate any recording
+        # - Regular user: Can access but will only see assigned recordings
+        is_moderator = user.get('is_moderator', False)
 
         languages = get_all_languages()
-        return render_template('validate.html', languages=languages)
+        return render_template('validate_new.html', languages=languages)
         
     except Exception as e:
         logger.error(f"Error in validate route: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return render_template('error.html',
                              error_code=500, 
-                             error_message="An internal server error occurred"), 500
+                             error_message=f"An internal server error occurred: {str(e)}"), 500
 
 def ensure_language_tables(conn, language):
     """Ensure both recordings and transcriptions tables exist for the language"""
@@ -108,8 +122,7 @@ def ensure_language_tables(conn, language):
                     username VARCHAR,
                     age_group VARCHAR,
                     accent VARCHAR,
-                    domain VARCHAR(10),
-                    subdomain VARCHAR(10)
+                    mother_tongue VARCHAR
                 )
             """))
             
@@ -125,36 +138,37 @@ def ensure_language_tables(conn, language):
         
         conn.commit()
     else:
-        # Check if domain and subdomain columns exist in recordings table
-        domain_exists = conn.execute(text(f"""
+        # Check if mother_tongue column exist in recordings table
+        mother_tongue_exists = conn.execute(text(f"""
             SELECT EXISTS (
                 SELECT FROM information_schema.columns 
                 WHERE table_name = 'recordings_{language}' 
-                AND column_name = 'domain'
+                AND column_name = 'mother_tongue'
             )
         """)).scalar()
         
-        if not domain_exists:
-            # Add domain and subdomain columns if they don't exist
+        if not mother_tongue_exists:
+            # Add mother_tongue column if they don't exist
             conn.execute(text(f"""
                 ALTER TABLE recordings_{language}
-                ADD COLUMN domain VARCHAR(10),
-                ADD COLUMN subdomain VARCHAR(10)
+                ADD COLUMN mother_tongue VARCHAR
             """))
             conn.commit()
-            logger.info(f"Added domain and subdomain columns to recordings_{language}")
+            logger.info(f"Added mother_tongue column to recordings_{language}")
 
 @validation.route('/api/recordings', methods=['GET'])
 @login_required
 def get_recordings():
-    if not session.get('user', {}).get('is_moderator', False):
-        return jsonify({'error': 'Unauthorized'}), 403
-        
+    user = session.get('user', {})
+    is_moderator = user.get('is_moderator', False)
+    user_id = user.get('id')
+    
+    # For regular users, only return their assigned recordings
+    # For moderators/admins, return all recordings
     page = request.args.get('page', 1, type=int)
     language = request.args.get('language', '')
     status = request.args.get('status', 'all')
-    domain = request.args.get('domain', '')
-    subdomain = request.args.get('subdomain', '')
+    mother_tongue = request.args.get('mother_tongue', '')
     
     try:
         offset = (page - 1) * 10
@@ -182,13 +196,9 @@ def get_recordings():
             where_conditions.append("r.status = 'rejected'")
             count_conditions.append("status = 'rejected'")
         
-        if domain:
-            where_conditions.append("r.domain = :domain")
-            count_conditions.append("domain = :domain")
-        
-        if subdomain:
-            where_conditions.append("r.subdomain = :subdomain")
-            count_conditions.append("subdomain = :subdomain")
+        if mother_tongue:
+            where_conditions.append("r.mother_tongue = :mother_tongue")
+            count_conditions.append("mother_tongue = :mother_tongue")
             
         where_clause = f" WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
         count_where = f"{' AND '.join(count_conditions)}" if count_conditions else "true"
@@ -202,18 +212,14 @@ def get_recordings():
                 full_query = text(query.format(language, language))
                 params = {"offset": offset}
                 
-                if domain:
-                    params["domain"] = domain
-                if subdomain:
-                    params["subdomain"] = subdomain
+                if mother_tongue:
+                    params["mother_tongue"] = mother_tongue
                 
                 result = conn.execute(full_query, params)
                 
                 count_params = {}
-                if domain:
-                    count_params["domain"] = domain
-                if subdomain:
-                    count_params["subdomain"] = subdomain
+                if mother_tongue:
+                    count_params["mother_tongue"] = mother_tongue
                 
                 total_result = conn.execute(text(
                     count_query.format(language, count_where)
@@ -237,18 +243,14 @@ def get_recordings():
                     language_query = text(query.format(language_code, language_code))
                     
                     params = {"offset": offset}
-                    if domain:
-                        params["domain"] = domain
-                    if subdomain:
-                        params["subdomain"] = subdomain
+                    if mother_tongue:
+                        params["mother_tongue"] = mother_tongue
                         
                     recordings = conn.execute(language_query, params).fetchall()
                     
                     count_params = {}
-                    if domain:
-                        count_params["domain"] = domain
-                    if subdomain:
-                        count_params["subdomain"] = subdomain
+                    if mother_tongue:
+                        count_params["mother_tongue"] = mother_tongue
                         
                     count_result = conn.execute(text(
                         count_query.format(language_code, count_where)
@@ -269,8 +271,7 @@ def get_recordings():
         return jsonify({
             'recordings': recordings,
             'total': total,
-            'domain': domain,
-            'subdomain': subdomain
+            'mother_tongue': mother_tongue
         })
         
     except Exception as e:
@@ -280,8 +281,17 @@ def get_recordings():
 @validation.route('/api/verify/<path:recording_id>', methods=['POST'])
 @login_required
 def verify_recording(recording_id):
-    if not session.get('user', {}).get('is_moderator', False):
-        return jsonify({'error': 'Unauthorized'}), 403
+    user = session.get('user', {})
+    is_moderator = user.get('is_moderator', False)
+    user_id = user.get('id')
+
+    # Allow both moderators and regular users with assigned recordings
+    # Regular users can only verify recordings assigned to them
+    if not is_moderator:
+        # Verify the recording is assigned to this user
+        assignments = get_user_pending_assignments(user_id)
+        if not assignments or len(assignments) == 0:
+            return jsonify({'error': 'Unauthorized - No recordings assigned to you'}), 403
 
     try:
         data = request.get_json()
@@ -409,16 +419,45 @@ def delete_recording(recording_id):
 @validation.route('/api/next_recording', methods=['GET'])
 @login_required
 def get_next_recording():
-    if not session.get('user', {}).get('is_moderator', False):
-        return jsonify({'error': 'Unauthorized'}), 403
-        
-    language = request.args.get('language', '')
-    domain = request.args.get('domain', '')
-    subdomain = request.args.get('subdomain', '')
+    user = session.get('user', {})
+    is_moderator = user.get('is_moderator', False)
+    user_id = user.get('id')
     
+    language = request.args.get('language', '')
+    mother_tongue = request.args.get('mother_tongue', '')
+
     if not language:
         return jsonify({'error': 'Language is required'}), 400
+
+    # Check if user has any assignments for this language
+    user_id = session['user']['id']
+    assignments = get_user_pending_assignments(user_id)
+    
+    # FOR NON-MODERATORS: Only show assigned recordings
+    if not is_moderator:
+        # First check if user has any assignments at all
+        if not assignments or len(assignments) == 0:
+            return jsonify({'error': 'No recordings assigned to you. Please contact admin for assignment.'}), 403
+            
+        # Filter assignments by language
+        lang_assignments = [a for a in assignments if a.get('language') == language]
         
+        if not lang_assignments:
+            return jsonify({
+                'status': 'no_recordings',
+                'message': f'No recordings assigned to you for language: {language}'
+            }), 200
+            
+        # Return the first assigned recording
+        recording = lang_assignments[0]
+        
+        return jsonify({
+            'status': 'success',
+            'recording': recording,
+            'is_assigned': True
+        })
+    
+    # For moderators/admins, show all pending recordings
     try:
         with engine.connect() as conn:
             if not table_exists(conn, f"recordings_{language}"):
@@ -427,9 +466,28 @@ def get_next_recording():
                     'message': 'No recordings available for validation'
                 })
 
-        # This now uses the imported assign_recording from database_manager.py
-        # which properly handles domain/subdomain filtering
-        recording = assign_recording(language, session['user']['id'], domain, subdomain)
+        # First check if user has assigned recordings for this language
+        user_id = session['user']['id']
+        user_assignments = get_user_pending_assignments(user_id)
+        
+        # Filter assignments for the requested language
+        assigned_recording = None
+        for assignment in user_assignments:
+            if assignment['language'] == language:
+                assigned_recording = assignment
+                break
+        
+        if assigned_recording:
+            # Return the assigned recording first
+            return jsonify({
+                'status': 'success',
+                'recording': assigned_recording,
+                'is_assigned': True,
+                'assigned_by': assigned_recording.get('assigned_by')
+            })
+        
+        # If no assigned recording, fall back to the existing assignment logic
+        recording = assign_recording(language, session['user']['id'], mother_tongue)
         
         if not recording:
             return jsonify({
@@ -439,7 +497,8 @@ def get_next_recording():
             
         return jsonify({
             'status': 'success',
-            'recording': dict(recording)
+            'recording': dict(recording),
+            'is_assigned': False
         })
         
     except Exception as e:
@@ -448,3 +507,209 @@ def get_next_recording():
             'status': 'no_recordings',
             'message': 'No recordings available for validation'
         })
+
+@validation.route('/api/pending_recordings', methods=['GET'])
+@login_required
+def get_pending_recordings_api():
+    """Get pending recordings that can be assigned to users (admin only)"""
+    user = session.get('user', {})
+    
+    # Debug: Log user info
+    logger.info(f"Pending recordings API - User: {user.get('id')}, Role: {user.get('role')}")
+    
+    # Check if user is admin
+    user_role = user.get('role', '')
+    if user_role != 'admin':
+        logger.warning(f"Non-admin user {user.get('id')} with role '{user_role}' tried to access pending recordings API")
+        return jsonify({'error': 'Admin access required. Current role: ' + str(user_role)}), 403
+    
+    language = request.args.get('language', '')
+    mother_tongue = request.args.get('mother_tongue', '')
+    limit = request.args.get('limit', 50, type=int)
+    
+    logger.info(f"Loading pending recordings - Language: '{language}', Limit: {limit}")
+    
+    try:
+        if language:
+            recordings = get_pending_recordings_for_assignment(language, mother_tongue, limit)
+            logger.info(f"Found {len(recordings)} recordings for language: {language}")
+        else:
+            # Pass None instead of empty string to get all recordings
+            recordings = get_all_pending_recordings(None, limit)
+            logger.info(f"Found {len(recordings)} recordings across all languages")
+        
+        return jsonify({
+            'status': 'success',
+            'recordings': recordings,
+            'count': len(recordings)
+        })
+    except Exception as e:
+        import traceback
+        logger.error(f"Error getting pending recordings: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+@validation.route('/api/assign', methods=['POST'])
+@login_required
+def assign_recording_api():
+    """Assign a recording to a specific user (admin only)"""
+    user = session.get('user', {})
+    
+    # Check if user is admin
+    if user.get('role') != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        data = request.get_json()
+        recording_id = data.get('recording_id')
+        language = data.get('language')
+        user_id = data.get('user_id')  # The user to assign to
+        
+        if not recording_id or not language or not user_id:
+            return jsonify({'error': 'recording_id, language, and user_id are required'}), 400
+        
+        # Assign the recording
+        result = assign_recording_to_user(
+            recording_id=recording_id,
+            language=language,
+            user_id=user_id,
+            assigned_by=user['id']
+        )
+        
+        if result.get('success'):
+            return jsonify({
+                'status': 'success',
+                'message': result.get('message')
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'error': result.get('error')
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Error assigning recording: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@validation.route('/api/users', methods=['GET'])
+@login_required
+def get_users_api():
+    """Get list of all users who can be assigned recordings for validation"""
+    user = session.get('user', {})
+    
+    # Check if user is admin
+    if user.get('role') != 'admin':
+        logger.warning(f"Non-admin user {user.get('id')} tried to access users API")
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        # Use the existing PocketBase client from the app (already authenticated)
+        pb = current_app.pb
+        
+        if not pb:
+            logger.error("PocketBase client not initialized")
+            return jsonify({'error': 'PocketBase not initialized'}), 500
+        
+        users = []
+        
+        # Use get_list with fields parameter to get username, name, email, role
+        # Include username as it's commonly used in PocketBase
+        try:
+            result = pb.collection('users').get_list(
+                query_params={
+                    'per_page': 200,
+                    'sort': '-created',
+                    'fields': 'id,username,name,email,role'
+                }
+            )
+            
+            logger.info(f"Users API: Got {result.total_items} users")
+            
+            for item in result.items:
+                # Get username - prefer username, then name, then email
+                display_name = getattr(item, 'username', '') or getattr(item, 'name', '') or getattr(item, 'email', '')
+                users.append({
+                    'id': item.id,
+                    'username': display_name,
+                    'email': getattr(item, 'email', ''),
+                    'name': getattr(item, 'name', ''),
+                    'role': getattr(item, 'role', 'user')
+                })
+                
+        except Exception as pb_error:
+            logger.error(f"PocketBase error fetching users: {pb_error}")
+            return jsonify({'error': f'Failed to fetch users: {str(pb_error)}'}), 500
+        
+        logger.info(f"Final user count: {len(users)}")
+        
+        return jsonify({
+            'status': 'success',
+            'users': users
+        })
+    except Exception as e:
+        logger.error(f"Error in get_users_api: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
+
+@validation.route('/api/my_assignments', methods=['GET'])
+@login_required
+def get_my_assignments_api():
+    """Get current user's assigned recordings"""
+    user = session.get('user', {})
+    user_id = user.get('id')
+    
+    try:
+        # Get pending assignments
+        pending = get_user_pending_assignments(user_id)
+        
+        # Get all assignments (including completed)
+        all_assignments = get_all_user_assignments(user_id)
+        
+        return jsonify({
+            'status': 'success',
+            'pending_assignments': pending,
+            'all_assignments': all_assignments,
+            'pending_count': len(pending)
+        })
+    except Exception as e:
+        logger.error(f"Error getting assignments: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@validation.route('/api/unassign', methods=['POST'])
+@login_required
+def unassign_recording_api():
+    """Unassign a recording from a user (admin only)"""
+    user = session.get('user', {})
+    
+    # Check if user is admin
+    if user.get('role') != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        data = request.get_json()
+        recording_id = data.get('recording_id')
+        language = data.get('language')
+        
+        if not recording_id or not language:
+            return jsonify({'error': 'recording_id and language are required'}), 400
+        
+        with engine.connect() as conn:
+            conn.execute(text("""
+                DELETE FROM validation_assignments
+                WHERE recording_id = :recording_id
+                AND language = :language
+                AND status = 'pending'
+            """), {
+                "recording_id": recording_id,
+                "language": language
+            })
+            conn.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Recording unassigned successfully'
+        })
+    except Exception as e:
+        logger.error(f"Error unassigning recording: {str(e)}")
+        return jsonify({'error': str(e)}), 500

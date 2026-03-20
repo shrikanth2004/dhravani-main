@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Dataset Preparation Interface</title>
@@ -14,6 +15,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='mobile.css') }}">
     <meta name="csrf-token" content="{{ session['csrf_token'] }}">
 </head>
+
 <body data-auth-enabled="{{ 'true' if enable_auth else 'false' }}">
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         <div id="uploadToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
@@ -30,29 +32,30 @@
             <h4 class="mb-0" style="color: #1a73e8;">COILD Dhravani</h4>
             {% if enable_auth and session.get('user') %}
             <div class="d-flex align-items-center gap-3">
-                {% if session.get('user', {}).get('is_moderator') %}
-                <a href="{{ url_for('validation.validate') }}" class="btn btn-outline-primary d-none d-md-inline-block">Validate</a>
-                {% endif %}
+                <a href="{{ url_for('validation.validate') }}"
+                    class="btn btn-outline-primary">Validate</a>
                 {% if session.get('user', {}).get('role') == 'admin' %}
-                <a href="{{ url_for('admin.admin_interface') }}" class="btn btn-primary d-none d-md-inline-block">Admin Panel</a>
+                <a href="{{ url_for('admin.admin_interface') }}" class="btn btn-primary d-none d-md-inline-block">Admin
+                    Panel</a>
                 {% endif %}
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-primary">Logout</a>
             </div>
             {% endif %}
         </div>
         <!-- <h2 class="page-title">Dataset Recording Interface</h2> -->
-        
+
         <div class="row g-4 main-container">
             <!-- Left Column: Recording Interface (now primary) -->
             <div class="col-9">
                 <div id="recordingInterface" class="card h-100">
                     <div class="card-body px-3 recording-interface-scroll">
-                        <div class="d-flex align-items-center justify-content-between recording-header mb-2"> 
+                        <div class="d-flex align-items-center justify-content-between recording-header mb-2">
                             <h4 style="color: #202124;">Transcript</h4>
                             <!-- Keep only this one settings toggle button -->
                             <button id="settingsToggle" class="btn btn-icon d-md-none" aria-label="Settings">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+                                    <path
+                                        d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
                                 </svg>
                             </button>
                         </div>
@@ -60,14 +63,16 @@
                         <div class="initial-message" id="initialMessage">
                             <div class="text-center empty-state">
                                 {% if enable_auth and not session.get('user') %}
-                                <img src="{{ url_for('static', filename='microphone-icon.svg') }}" alt="Microphone" width="64" height="64">
+                                <img src="{{ url_for('static', filename='microphone-icon.svg') }}" alt="Microphone"
+                                    width="64" height="64">
                                 <h5 class="mt-4" style="color: #202124;">Sign In</h5>
                                 <p class="text-muted">
                                     to continue to Dataset Recorder
                                 </p>
                                 <a href="{{ url_for('login') }}" class="btn btn-primary mt-3">Sign In</a>
                                 {% else %}
-                                <img src="{{ url_for('static', filename='microphone-icon.svg') }}" alt="Microphone" width="64" height="64">
+                                <img src="{{ url_for('static', filename='microphone-icon.svg') }}" alt="Microphone"
+                                    width="64" height="64">
                                 <h5 class="mt-4" style="color: #202124;">Ready to Start Recording</h5>
                                 <p class="text-muted">
                                     Please complete the session setup in Settings to begin recording.
@@ -75,12 +80,13 @@
                                 {% endif %}
                             </div>
                         </div>
-                        
+
                         <div class="transcript-container" style="display: none;">
                             <div class="transcript-box mb-2">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h5 style="color: #5f6368;">Current Transcript:
-                                        <span id="recordingStatus" class="badge bg-warning ms-2" style="display: none;">Previously Recorded</span>
+                                        <span id="recordingStatus" class="badge bg-warning ms-2"
+                                            style="display: none;">Previously Recorded</span>
                                     </h5>
                                     <div class="font-size-control">
                                         <button class="btn btn-icon" onclick="decreaseFontSize()">A-</button>
@@ -93,19 +99,31 @@
                         </div>
 
                         <div class="recording-controls">
+                            <div class="form-group mb-3 d-flex align-items-center gap-2">
+                                <label for="microphoneSelect" class="mb-0 text-muted fw-medium" style="white-space: nowrap;"><i class="fas fa-microphone me-2"></i>Microphone:</label>
+                                <select class="form-select form-select-sm" id="microphoneSelect" style="max-width: 300px;">
+                                    <option value="">Default Microphone</option>
+                                </select>
+                            </div>
                             <div class="btn-group mb-4">
-                                <button id="recordBtn" class="btn btn-primary px-4" title="Start/Stop Recording (R)">Start Recording</button>
-                                <button id="playBtn" class="btn btn-secondary px-4" title="Play (Space)" disabled>Play</button>
-                                <button id="saveBtn" class="btn btn-success px-4" title="Save (Enter)" disabled>Save</button>
-                                <button id="rerecordBtn" class="btn btn-warning px-4" title="Re-record (Backspace)" disabled>Re-record</button>
+                                <button id="recordBtn" class="btn btn-primary px-4"
+                                    title="Start/Stop Recording (R)">Start Recording</button>
+                                <button id="playBtn" class="btn btn-secondary px-4" title="Play (Space)"
+                                    disabled>Play</button>
+                                <button id="saveBtn" class="btn btn-success px-4" title="Save (Enter)"
+                                    disabled>Save</button>
+                                <button id="rerecordBtn" class="btn btn-warning px-4" title="Re-record (Backspace)"
+                                    disabled>Re-record</button>
                             </div>
 
                             <div class="d-flex align-items-center gap-3 navigation-controls">
-                                <button id="prevBtn" class="btn btn-outline-primary" title="Previous (←)">Previous</button>
+                                <button id="prevBtn" class="btn btn-outline-primary"
+                                    title="Previous (←)">Previous</button>
                                 <button id="skipBtn" class="btn btn-outline-warning" title="Skip (→)">Skip</button>
                                 <div class="ms-auto">
                                     <p class="mb-0" style="color: #5f6368;">
-                                        <span id="progress" class="fw-medium">0</span>/<span id="total" class="fw-medium">0</span>
+                                        <span id="progress" class="fw-medium">0</span>/<span id="total"
+                                            class="fw-medium">0</span>
                                     </p>
                                 </div>
                             </div>
@@ -122,9 +140,11 @@
                             <h5 style="color: #202124;">Settings</h5>
                             <div class="d-flex align-items-center gap-2">
                                 <span class="badge bg-primary">Required</span>
-                                <button id="settingsCloseBtn" class="settings-close d-md-none" aria-label="Close settings">
+                                <button id="settingsCloseBtn" class="settings-close d-md-none"
+                                    aria-label="Close settings">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                                        <path
+                                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                                     </svg>
                                 </button>
                             </div>
@@ -136,24 +156,21 @@
                                     <!-- Speaker Name field -->
                                     <div class="form-group">
                                         <div class="material-input">
-                                            <input type="text" 
-                                                   class="form-control" 
-                                                   id="speakerName" 
-                                                   name="speakerName"
-                                                   {% if session.get('user') and enable_auth %}disabled{% endif %} 
-                                                   required>
+                                            <input type="text" class="form-control" id="speakerName" name="speakerName"
+                                                {% if session.get('user') and enable_auth %}disabled{% endif %}
+                                                required>
                                             <label for="speakerName">
                                                 {% if session.get('user') and enable_auth %}
-                                                    Speaker Name (Auto-filled)
+                                                Speaker Name (Auto-filled)
                                                 {% else %}
-                                                    Speaker Name
+                                                Speaker Name
                                                 {% endif %}
                                             </label>
                                             <div class="input-line"></div>
                                         </div>
                                         <div class="form-text text-muted"></div>
                                     </div>
-                                    
+
                                     <!-- Language Selection moved here -->
                                     <div class="form-group">
                                         <div class="material-input">
@@ -164,30 +181,102 @@
                                             <div class="input-line"></div>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Domain and Subdomain selection moved here -->
-                                    <div class="row g-3 mb-2">
-                                        <div class="col-6">
-                                            <div class="material-input">
-                                                <select class="form-control" id="domain" name="domain" required>
-                                                    <!-- Will be populated by JavaScript -->
-                                                </select>
-                                                <label for="domain">Domain</label>
-                                                <div class="input-line"></div>
-                                            </div>
+
+                                    <!-- Mother Tongue Selection -->
+                                    <div class="form-group mb-2">
+                                        <div class="material-input">
+                                            <select class="form-control" id="mother_tongue" name="mother_tongue"
+                                                required>
+                                                <option value="">Select Mother Tongue</option>
+                                                <option value="Hindi">Hindi</option>
+                                                <option value="Bengali">Bengali</option>
+                                                <option value="Marathi">Marathi</option>
+                                                <option value="Telugu">Telugu</option>
+                                                <option value="Tamil">Tamil</option>
+                                                <option value="Kannada">Kannada</option>
+                                                <option value="Tulu">Tulu</option>
+                                                <option value="Malayalam">Malayalam</option>
+                                                <option value="Gujarati">Gujarati</option>
+                                                <option value="Odia">Odia</option>
+                                                <option value="Punjabi">Punjabi</option>
+                                                <option value="Assamese">Assamese</option>
+                                                <option value="Maithili">Maithili</option>
+                                                <option value="Bhojpuri">Bhojpuri</option>
+                                                <option value="Manipuri">Manipuri</option>
+                                                <option value="Konkani">Konkani</option>
+                                                <option value="Nepali">Nepali</option>
+                                                <option value="Dogri">Dogri</option>
+                                                <option value="Santhali">Santhali</option>
+                                                <option value="Kashmiri">Kashmiri</option>
+                                                <option value="Sindhi">Sindhi</option>
+                                                <option value="Urdu">Urdu</option>
+                                                <option value="English">English</option>
+                                                <option value="Marwari">Marwari</option>
+                                                <option value="Magahi">Magahi</option>
+                                                <option value="Rajasthani">Rajasthani</option>
+                                                <option value="Bhili">Bhili</option>
+                                                <option value="Gondi">Gondi</option>
+                                                <option value="Munda">Munda</option>
+                                                <option value="Kurukh">Kurukh</option>
+                                                <option value="Ho">Ho</option>
+                                                <option value="Kharia">Kharia</option>
+                                                <option value="Sora">Sora</option>
+                                                <option value="Mundari">Mundari</option>
+                                                <option value="Santali Script">Santali Script</option>
+                                                <option value="Khasi">Khasi</option>
+                                                <option value="Garo">Garo</option>
+                                                <option value="Mizo">Mizo</option>
+                                                <option value="Kokborok">Kokborok</option>
+                                                <option value="Bodo">Bodo</option>
+                                                <option value="Dimasa">Dimasa</option>
+                                                <option value="Karbi">Karbi</option>
+                                                <option value="Rabha">Rabha</option>
+                                                <option value="Tiwa">Tiwa</option>
+                                                <option value="Deori">Deori</option>
+                                                <option value="Sonowal Kachari">Sonowal Kachari</option>
+                                                <option value="Rathwi Bhil">Rathwi Bhil</option>
+                                                <option value="Bhilodi">Bhilodi</option>
+                                                <option value="Khandeshi">Khandeshi</option>
+                                                <option value="Varli">Varli</option>
+                                                <option value="Ahirani">Ahirani</option>
+                                                <option value="Lambadi">Lambadi</option>
+                                                <option value="OTHER">Other</option>
+                                            </select>
+                                            <label for="mother_tongue">Mother Tongue</label>
+                                            <div class="input-line"></div>
                                         </div>
-                                        <div class="col-6">
+                                    </div>
+
+                                    <!-- Custom Mother Tongue Input (shown when "Other" is selected) -->
+                                    <div class="row g-3 mb-2" id="customMotherTongueRow" style="display: none;">
+                                        <div class="col-12">
                                             <div class="material-input">
-                                                <select class="form-control" id="subdomain" name="subdomain" required disabled>
-                                                    <!-- Will be populated by JavaScript -->
-                                                    <option value="">Loading...</option>
-                                                </select>
-                                                <label for="subdomain">Subdomain</label>
+                                                <input type="text" class="form-control" id="customMotherTongue"
+                                                    name="customMotherTongue" placeholder="Enter custom mother tongue">
+                                                <label for="customMotherTongue">Custom Mother Tongue</label>
                                                 <div class="input-line"></div>
                                             </div>
                                         </div>
                                     </div>
-                                    
+
+                                    <!-- Education Level Selection -->
+                                    <div class="form-group mb-2">
+                                        <div class="material-input">
+                                            <select class="form-control" id="education" name="education" required>
+                                                <option value="">Select Education Level</option>
+                                                <option value="phd&above">PhD & Above</option>
+                                                <option value="masters">Masters</option>
+                                                <option value="bachelors/diploma">Bachelors/Diploma</option>
+                                                <option value="pu/12th">PU/12th</option>
+                                                <option value="ssc/sslc">SSC/SSLC</option>
+                                                <option value="others">Others</option>
+                                            </select>
+                                            <label for="education">Education Level</label>
+                                            <div class="input-line"></div>
+                                        </div>
+                                    </div>
+
+
                                     <!-- Gender and Age Group in horizontal layout -->
                                     <div class="row g-3 mb-2">
                                         <div class="col-6">
@@ -204,14 +293,14 @@
                                         </div>
                                         <div class="col-6">
                                             <div class="material-input">
-                                                <select class="form-control" id="age_group" name="age_group" required>
-                                                    <option value="">Select age group</option>
-                                                    <option value="Teenagers">Teenagers</option>
-                                                    <option value="Adults">Adults</option>
-                                                    <option value="Elderly">Elderly</option>
-                                                </select>
-                                                <label for="age_group">Age Group</label>
-                                                <div class="input-line"></div>
+<select class="form-control" id="age_range" name="age_range" required>
+    <option value="">Select age</option>
+    {% for age in range(10, 100) %}
+    <option value="{{ age }}">{{ age }}</option>
+    {% endfor %}
+</select>
+<label for="age_range">Age</label>
+<div class="input-line"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -238,23 +327,35 @@
                                         </div>
                                     </div>
 
+                                    <!-- District Selection (India states only) -->
+                                    <div class="form-group mb-2">
+                                        <div class="material-input">
+                                            <select class="form-control" id="district" name="district">
+                                                <option value="">Select District</option>
+                                            </select>
+                                            <label for="district">District (India only)</label>
+                                            <div class="input-line"></div>
+                                        </div>
+                                    </div>
+
                                     <!-- City and Accent in horizontal layout -->
-                                    <div class="row g-3 mb-2">
+                                    <div class="row g-3 mb-2">  
+
                                         <div class="col-6">
                                             <div class="material-input">
                                                 <input type="text" class="form-control" id="city" required>
-                                                <label for="city">City</label>
+                                                <label for="city">City/Town</label>
                                                 <div class="input-line"></div>
                                             </div>
                                         </div>
                                         <div class="col-6">
                                             <div class="material-input">
                                                 <select class="form-control" id="accent" name="accent" required>
-                                                    <option value="">Select accent</option>
+                                                    <option value="">Select locality</option>
                                                     <option value="Rural">Rural</option>
                                                     <option value="Urban">Urban</option>
                                                 </select>
-                                                <label for="accent">Accent</label>
+                                                <label for="accent">Locality</label>
                                                 <div class="input-line"></div>
                                             </div>
                                         </div>
@@ -266,7 +367,8 @@
                                     <div class="material-checkbox mb-3">
                                         <input type="checkbox" id="consentCheckbox" required>
                                         <label for="consentCheckbox">
-                                            I agree to the <a href="{{ url_for('privacy') }}" target="_blank">Privacy Policy and Terms of Service</a>
+                                            I agree to the <a href="{{ url_for('privacy') }}" target="_blank">Privacy
+                                                Policy and Terms of Service</a>
                                         </label>
                                     </div>
                                     <button type="submit" class="btn btn-primary w-100" disabled id="startSessionBtn">
@@ -282,312 +384,215 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Load country-states.js and india-districts.js BEFORE recorder.js -->
+    <script src="{{ url_for('static', filename='country-states.js') }}"></script>
+    <script src="{{ url_for('static', filename='india-districts.js') }}"></script>
     <script src="{{ url_for('static', filename='recorder.js') }}"></script>
 
-    <!-- Add this script to load country-states.js -->
-    <script src="{{ url_for('static', filename='country-states.js') }}"></script>
-
     <!-- Add this div for auth check -->
-    <div id="authCheck" class="d-none" data-authenticated="{{ 'true' if session.get('user') or not enable_auth else 'false' }}"></div>
+    <div id="authCheck" class="d-none"
+        data-authenticated="{{ 'true' if session.get('user') or not enable_auth else 'false' }}"></div>
 
     <script>
-    // Add this authentication verification function at the top
-    document.addEventListener('DOMContentLoaded', function() {
-        // Check authentication status
-        const authEnabled = document.body.getAttribute('data-auth-enabled') === 'true';
-        const isAuthenticated = document.getElementById('authCheck').getAttribute('data-authenticated') === 'true';
-        
-        // Handle authentication status
-        if (authEnabled && !isAuthenticated) {
-            console.log('User not authenticated, redirecting to login');
-            // Hide recording interface
-            const recordingInterface = document.getElementById('recordingInterface');
-            if (recordingInterface) {
-                recordingInterface.style.display = 'none';
-            }
-            
-            // Show login message
-            const initialMessage = document.getElementById('initialMessage');
-            if (initialMessage) {
-                initialMessage.style.display = 'block';
-            }
-            
-            // Disable the settings panel
-            const settingsPanel = document.getElementById('settingsPanel');
-            if (settingsPanel) {
-                settingsPanel.style.display = 'none';
-            }
-            
-            // Optional: Redirect after a short delay if login message doesn't appear
-            setTimeout(() => {
-                if (!document.querySelector('.btn-primary[href*="login"]')) {
-                    window.location.href = '{{ url_for("login") }}';
-                }
-            }, 1500);
-        }
-    });
+        // Add this authentication verification function at the top
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check authentication status
+            const authEnabled = document.body.getAttribute('data-auth-enabled') === 'true';
+            const isAuthenticated = document.getElementById('authCheck').getAttribute('data-authenticated') === 'true';
 
-    async function loadLanguages() {
-        try {
-            const response = await fetch('/languages');
-            const data = await response.json();
-            
-            const languageSelect = document.getElementById('language');
-            const userLanguage = languageSelect.getAttribute('data-selected') || '{{ session.user.language|default("") }}';
-            
-            // Clear existing options except the first one
-            languageSelect.innerHTML = '<option value="">Select a language</option>';
-            
-            if (data.status === 'success' && data.languages && data.languages.length > 0) {
-                const languages = data.languages.sort((a, b) => a.name.localeCompare(b.name));
-                
-                languages.forEach(lang => {
-                    const option = document.createElement('option');
-                    option.value = lang.code;
-                    option.textContent = `${lang.name} (${lang.native_name})`;
-                    // Set selected if matches user's language
-                    if (lang.code === userLanguage) {
-                        option.selected = true;
-                        languageSelect.parentElement.classList.add('is-filled');
+            // Handle authentication status
+            if (authEnabled && !isAuthenticated) {
+                console.log('User not authenticated, redirecting to login');
+                // Hide recording interface
+                const recordingInterface = document.getElementById('recordingInterface');
+                if (recordingInterface) {
+                    recordingInterface.style.display = 'none';
+                }
+
+                // Show login message
+                const initialMessage = document.getElementById('initialMessage');
+                if (initialMessage) {
+                    initialMessage.style.display = 'block';
+                }
+
+                // Disable the settings panel
+                const settingsPanel = document.getElementById('settingsPanel');
+                if (settingsPanel) {
+                    settingsPanel.style.display = 'none';
+                }
+
+                // Optional: Redirect after a short delay if login message doesn't appear
+                setTimeout(() => {
+                    if (!document.querySelector('.btn-primary[href*="login"]')) {
+                        window.location.href = '{{ url_for("login") }}';
                     }
+                }, 1500);
+            }
+        });
+
+        async function loadLanguages() {
+            try {
+                const response = await fetch('/languages');
+                const data = await response.json();
+
+                const languageSelect = document.getElementById('language');
+                const userLanguage = languageSelect.getAttribute('data-selected') || '{{ session.user.language|default("") }}';
+
+                // Clear existing options except the first one
+                languageSelect.innerHTML = '<option value="">Select a language</option>';
+
+                if (data.status === 'success' && data.languages && data.languages.length > 0) {
+                    const languages = data.languages.sort((a, b) => a.name.localeCompare(b.name));
+
+                    languages.forEach(lang => {
+                        const option = document.createElement('option');
+                        option.value = lang.code;
+                        option.textContent = `${lang.name} (${lang.native_name})`;
+                        // Set selected if matches user's language
+                        if (lang.code === userLanguage) {
+                            option.selected = true;
+                            languageSelect.parentElement.classList.add('is-filled');
+                        }
+                        languageSelect.appendChild(option);
+                    });
+                } else {
+                    // Show "no languages available" message
+                    const option = document.createElement('option');
+                    option.disabled = true;
+                    option.textContent = 'No languages available';
                     languageSelect.appendChild(option);
-                });
-            } else {
-                // Show "no languages available" message
-                const option = document.createElement('option');
-                option.disabled = true;
-                option.textContent = 'No languages available';
-                languageSelect.appendChild(option);
-                
-                // Show toast message
-                showToast('No languages available with transcriptions', 'warning');
-            }
-        } catch (error) {
-            console.error('Error loading languages:', error);
-            showToast('Error loading languages. Please refresh the page.', 'error');
-        }
-    }
 
-    // Call loadLanguages when the page loads
-    document.addEventListener('DOMContentLoaded', loadLanguages);
-
-    // Add this function after the document.ready handler
-    function loadUserProfile() {
-        const userDataElem = document.getElementById('userData');
-        if (!userDataElem) return;
-        
-        try {
-            const userData = JSON.parse(userDataElem.textContent);
-            const languageSelect = document.getElementById('language');
-            
-            // Store the user's language preference as a data attribute
-            if (userData.language) {
-                languageSelect.setAttribute('data-selected', userData.language);
-            }
-            
-            // Pre-fill form fields with user data
-            const fields = ['gender', 'age_group', 'country', 'state', 'city', 'accent'];
-            fields.forEach(field => {
-                const elem = document.getElementById(field);
-                if (elem && userData[field]) {
-                    elem.value = userData[field];
-                    elem.parentElement.classList.add('is-filled');
-                    
-                    // Handle country change
-                    if (field === 'country' && userData['state']) {
-                        const event = new Event('change');
-                        elem.dispatchEvent(event);
-                        
-                        setTimeout(() => {
-                            const stateElem = document.getElementById('state');
-                            if (stateElem) {
-                                stateElem.value = userData['state'];
-                                stateElem.parentElement.classList.add('is-filled');
-                            }
-                        }, 100);
-                    }
+                    // Show toast message
+                    showToast('No languages available with transcriptions', 'warning');
                 }
-            });
+            } catch (error) {
+                console.error('Error loading languages:', error);
+                showToast('Error loading languages. Please refresh the page.', 'error');
+            }
+        }
 
-            // Pre-fill domain and subdomain if they exist
-            if (userData.domain) {
-                const domainElem = document.getElementById('domain');
-                domainElem.value = userData.domain;
-                domainElem.parentElement.classList.add('is-filled');
-                
-                // Load subdomains and then set subdomain value after a slight delay
-                loadSubdomains(userData.domain).then(() => {
-                    if (userData.subdomain) {
-                        setTimeout(() => {
-                            const subdomainElem = document.getElementById('subdomain');
-                            if (subdomainElem) {
-                                subdomainElem.value = userData.subdomain;
-                                subdomainElem.parentElement.classList.add('is-filled');
-                            }
-                        }, 300);
+        // Call loadLanguages when the page loads
+        document.addEventListener('DOMContentLoaded', loadLanguages);
+
+        // Add this function after the document.ready handler
+        function loadUserProfile() {
+            const userDataElem = document.getElementById('userData');
+            if (!userDataElem) return;
+
+            try {
+                const userData = JSON.parse(userDataElem.textContent);
+                const languageSelect = document.getElementById('language');
+
+                // Store the user's language preference as a data attribute
+                if (userData.language) {
+                    languageSelect.setAttribute('data-selected', userData.language);
+                }
+
+                // Pre-fill form fields with user data
+                const fields = ['gender', 'age_group', 'country', 'state', 'city', 'accent'];
+                fields.forEach(field => {
+                    const elem = document.getElementById(field);
+                    if (elem && userData[field]) {
+                        elem.value = userData[field];
+                        elem.parentElement.classList.add('is-filled');
+
+                        // Handle country change
+                        if (field === 'country' && userData['state']) {
+                            const event = new Event('change');
+                            elem.dispatchEvent(event);
+
+                            setTimeout(() => {
+                                const stateElem = document.getElementById('state');
+                                if (stateElem) {
+                                    stateElem.value = userData['state'];
+                                    stateElem.parentElement.classList.add('is-filled');
+                                }
+                            }, 100);
+                        }
                     }
                 });
-            }
-        } catch (e) {
-            console.error('Error loading user profile:', e);
-        }
-    }
 
-    // Load domains from server
-    async function loadDomains() {
-        try {
-            const domainSelect = document.getElementById('domain');
-            domainSelect.innerHTML = '<option value="">Loading available domains...</option>';
-            domainSelect.disabled = true;
-            
-            const response = await fetch('/domains');
-            const data = await response.json();
-            
-            domainSelect.innerHTML = ''; // Clear any existing options
-            
-            if (data.status === 'success' && data.domains) {
-                // Count available domains
-                const domainCount = Object.keys(data.domains).length;
-                
-                if (domainCount === 0) {
-                    domainSelect.innerHTML = '<option value="" disabled>No domains available</option>';
-                    domainSelect.disabled = true;
-                    return;
-                }
-                
-                // Add domain options
-                Object.entries(data.domains).forEach(([code, name]) => {
-                    const option = document.createElement('option');
-                    option.value = code;
-                    option.textContent = `${name} (${code})`;
-                    
-                    // Select first option by default
-                    if (domainSelect.options.length === 0) {
-                        option.selected = true;
-                        domainSelect.parentElement.classList.add('is-filled');
+                // Pre-fill mother tongue if it exists
+                if (userData.mother_tongue) {
+                    const motherTongueElem = document.getElementById('mother_tongue');
+                    const customMotherTongueRow = document.getElementById('customMotherTongueRow');
+                    const customMotherTongueInput = document.getElementById('customMotherTongue');
+
+                    // Handle "OTHER" mother tongue selection
+                    if (userData.mother_tongue === 'OTHER') {
+                        motherTongueElem.value = 'OTHER';
+                        motherTongueElem.parentElement.classList.add('is-filled');
+                        customMotherTongueRow.style.display = 'flex';
+                        customMotherTongueInput.required = true;
+                        if (userData.customMotherTongue) {
+                            customMotherTongueInput.value = userData.customMotherTongue;
+                            customMotherTongueInput.parentElement.classList.add('is-filled');
+                        }
+                    } else {
+                        motherTongueElem.value = userData.mother_tongue;
+                        motherTongueElem.parentElement.classList.add('is-filled');
                     }
-                    
-                    domainSelect.appendChild(option);
-                });
-                
-                // Enable the select
-                domainSelect.disabled = false;
-                
-                // Load subdomains for selected domain
-                if (domainSelect.value) {
-                    await loadSubdomains(domainSelect.value);
                 }
-            } else {
-                domainSelect.innerHTML = '<option value="" disabled>No domains available</option>';
-                domainSelect.disabled = true;
+            } catch (e) {
+                console.error('Error loading user profile:', e);
             }
-        } catch (error) {
-            console.error('Error loading domains:', error);
-            const domainSelect = document.getElementById('domain');
-            domainSelect.innerHTML = '<option value="" disabled>Error loading domains</option>';
-            domainSelect.disabled = true;
         }
-    }
 
-    // Load subdomains based on selected domain
-    async function loadSubdomains(domainCode) {
-        try {
-            const subdomainSelect = document.getElementById('subdomain');
-            subdomainSelect.innerHTML = '<option value="">Loading available subdomains...</option>';
-            subdomainSelect.disabled = true;
-            
-            if (!domainCode) {
-                subdomainSelect.innerHTML = '<option value="" disabled>Please select a domain first</option>';
-                subdomainSelect.disabled = true;
-                return;
+
+        // Update DOMContentLoaded to attach event handlers for mother tongue
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize custom input fields as hidden
+            const customMotherTongueRow = document.getElementById('customMotherTongueRow');
+            if (customMotherTongueRow) {
+                customMotherTongueRow.style.display = 'none';
             }
-            
-            const response = await fetch(`/domains/${domainCode}/subdomains`);
-            const data = await response.json();
-            
-            subdomainSelect.innerHTML = '';
-            
-            if (data.status === 'success' && data.subdomains) {
-                // Check if we have any subdomains
-                if (data.subdomains.length === 0) {
-                    subdomainSelect.innerHTML = '<option value="" disabled>No subdomains available</option>';
-                    subdomainSelect.disabled = true;
-                    return;
-                }
-                
-                // Clear and populate subdomain options
-                data.subdomains.forEach(subdomain => {
-                    const option = document.createElement('option');
-                    option.value = subdomain.mnemonic;
-                    option.textContent = `${subdomain.name} (${subdomain.mnemonic})`;
-                    
-                    // Select first subdomain by default
-                    if (subdomainSelect.options.length === 0) {
-                        option.selected = true;
+
+            // Add mother tongue change handler
+            const motherTongueSelect = document.getElementById('mother_tongue');
+            if (motherTongueSelect) {
+                motherTongueSelect.addEventListener('change', function () {
+                    const customMotherTongueRow = document.getElementById('customMotherTongueRow');
+                    const customMotherTongueInput = document.getElementById('customMotherTongue');
+
+                    // Show custom mother tongue input if "OTHER" is selected
+                    if (this.value === 'OTHER') {
+                        customMotherTongueRow.style.display = 'flex';
+                        customMotherTongueInput.required = true;
+                    } else {
+                        customMotherTongueRow.style.display = 'none';
+                        customMotherTongueInput.required = false;
+                        customMotherTongueInput.value = '';
                     }
-                    
-                    subdomainSelect.appendChild(option);
                 });
-                
-                subdomainSelect.disabled = false;
-                subdomainSelect.parentElement.classList.add('is-filled');
-                
-                // If no option is selected, select the first one
-                if (!subdomainSelect.value && subdomainSelect.options.length > 0) {
-                    subdomainSelect.options[0].selected = true;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // ...existing DOMContentLoaded code...
+            loadUserProfile();
+        });
+
+        // Add CSRF token to all AJAX requests
+        document.addEventListener('DOMContentLoaded', function () {
+            // Add CSRF token to AJAX headers
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            // Add to fetch requests
+            const originalFetch = window.fetch;
+            window.fetch = function (url, options = {}) {
+                options = options || {};
+                options.headers = options.headers || {};
+
+                // Only add for POST/PUT/DELETE requests
+                if (options.method && ['POST', 'PUT', 'DELETE'].includes(options.method.toUpperCase())) {
+                    options.headers['X-CSRF-Token'] = csrfToken;
                 }
-            } else {
-                // No fallback to GEN, just show an error
-                subdomainSelect.innerHTML = '<option value="" disabled>No subdomains available</option>';
-                subdomainSelect.disabled = true;
-            }
-        } catch (error) {
-            console.error('Error loading subdomains:', error);
-            const subdomainSelect = document.getElementById('subdomain');
-            subdomainSelect.innerHTML = '<option value="" disabled>Error loading subdomains</option>';
-            subdomainSelect.disabled = true;
-        }
-    }
 
-    // Add domain change handler
-    document.getElementById('domain').addEventListener('change', function() {
-        loadSubdomains(this.value);
-    });
+                return originalFetch(url, options);
+            };
+        });
 
-    // Update DOMContentLoaded to load domains
-    document.addEventListener('DOMContentLoaded', function() {
-        // ...existing DOMContentLoaded code...
-        
-        // Load domains and subdomains
-        loadDomains();
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-        // ...existing DOMContentLoaded code...
-        loadUserProfile();
-    });
-
-    // Add CSRF token to all AJAX requests
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add CSRF token to AJAX headers
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        
-        // Add to fetch requests
-        const originalFetch = window.fetch;
-        window.fetch = function(url, options = {}) {
-            options = options || {};
-            options.headers = options.headers || {};
-            
-            // Only add for POST/PUT/DELETE requests
-            if (options.method && ['POST', 'PUT', 'DELETE'].includes(options.method.toUpperCase())) {
-                options.headers['X-CSRF-Token'] = csrfToken;
-            }
-            
-            return originalFetch(url, options);
-        };
-    });
-    
-    // Remove the auth persistence check since we now use secure cookies
+        // Remove the auth persistence check since we now use secure cookies
     </script>
 
     <!-- Add this right before the closing </body> tag -->
@@ -601,10 +606,11 @@
             "city": "{{ session.user.city|default('') }}",
             "accent": "{{ session.user.accent|default('') }}",
             "language": "{{ session.user.language|default('') }}",
-            "domain": "{{ session.user.domain|default('GEN') }}",
-            "subdomain": "{{ session.user.subdomain|default('GEN') }}"
+            "mother_tongue": "{{ session.user.mother_tongue|default('') }}",
+            "education": "{{ session.user.education|default('') }}"
         }
     </script>
     {% endif %}
 </body>
+
 </html>

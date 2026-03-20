@@ -58,11 +58,110 @@ function getCsrfToken() {
     return token;
 }
 
+// Function to populate country and state dropdowns
+// Returns a Promise that resolves when the dropdowns are populated
+function populateCountryDropdown() {
+    return new Promise((resolve) => {
+        const countrySelect = document.getElementById('country');
+        const stateSelect = document.getElementById('state');
+
+        if (!countrySelect || !stateSelect) {
+            console.error('Country or state select element not found');
+            resolve();
+            return;
+        }
+
+        // Check if already populated
+        if (countrySelect.options.length > 1) {
+            // Already populated, just set up the change listener
+            setupStateListener(countrySelect, stateSelect);
+            resolve();
+            return;
+        }
+
+        // Populate countries
+        if (typeof country_and_states !== 'undefined' && country_and_states.country) {
+            for (const [code, name] of Object.entries(country_and_states.country)) {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = name;
+                countrySelect.appendChild(option);
+            }
+        } else {
+            console.error('country_and_states data not found');
+        }
+
+        // Set up the change event listener
+        setupStateListener(countrySelect, stateSelect);
+
+        resolve();
+    });
+}
+
+function setupStateListener(countrySelect, stateSelect) {
+    // Remove any existing change listeners to avoid duplicates
+    const newCountrySelect = countrySelect.cloneNode(true);
+    countrySelect.parentNode.replaceChild(newCountrySelect, countrySelect);
+
+        // Update states based on selected country
+        newCountrySelect.addEventListener('change', () => {
+            const selectedCountry = newCountrySelect.value;
+            const districtSelect = document.getElementById('district');
+            
+            // Clear state and district options
+            stateSelect.innerHTML = '<option value="">Select State/Province</option>';
+            if (districtSelect) districtSelect.innerHTML = '<option value="">Select District</option>';
+            
+            if (selectedCountry && country_and_states && country_and_states.states && country_and_states.states[selectedCountry]) {
+                country_and_states.states[selectedCountry].forEach(state => {
+                    const option = document.createElement('option');
+                    option.value = state.code;
+                    option.textContent = state.name;
+                    stateSelect.appendChild(option);
+                });
+            }
+        });
+
+        // Trigger districts load if state is already selected (page load/pre-fill)
+        if (stateSelect.value && typeof india_districts !== 'undefined' && india_districts[stateSelect.value]) {
+            const districtSelect = document.getElementById('district');
+            if (districtSelect) {
+                districtSelect.innerHTML = '<option value="">Select District</option>';
+                india_districts[stateSelect.value].forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district;
+                    option.textContent = district;
+                    districtSelect.appendChild(option);
+                });
+            }
+        }
+
+    // Add state change listener for districts (India only)
+    stateSelect.addEventListener('change', () => {
+        const selectedState = stateSelect.value;
+        const districtSelect = document.getElementById('district');
+        
+        if (districtSelect) {
+            districtSelect.innerHTML = '<option value="">Select District</option>';
+            
+            // Only populate for India states
+            if (selectedState && typeof india_districts !== 'undefined' && india_districts[selectedState]) {
+                india_districts[selectedState].forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district;
+                    option.textContent = district;
+                    districtSelect.appendChild(option);
+                });
+            }
+        }
+    });
+}
+
 // Load session data if exists
 document.addEventListener('DOMContentLoaded', () => {
     // Check if authentication is disabled via meta tag
     const authEnabled = document.body.dataset.authEnabled === 'true';
-    
+
     // If auth is disabled, consider the user authenticated
     isAuthenticated = !authEnabled || document.getElementById('authCheck')?.dataset.authenticated === 'true';
 
@@ -84,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Get user data for preferences
     const userDataElem = document.getElementById('userData');
     let userData = null;
-    
+
     // Parse userData if it exists
     if (userDataElem) {
         try {
@@ -93,11 +192,20 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error parsing user data:', e);
         }
     }
-    
-    // Load domains with user preferences, then load user profile
-    loadDomains(userData).then(() => {
-        loadUserProfile();
-    });
+
+    // Load domains with user preferences only if domain element exists
+    const domainSelect = document.getElementById('domain');
+    if (domainSelect) {
+        loadDomains(userData).then(() => {
+            loadUserProfile();
+        });
+    } else {
+        // Just load user profile if no domain element
+        // Ensure country dropdown is populated first before loading profile
+        populateCountryDropdown().then(() => {
+            loadUserProfile();
+        });
+    }
 
     const savedSession = sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (savedSession) {
@@ -117,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initially disable recording interface
     const recordingInterface = document.getElementById('recordingInterface');
     recordingInterface.classList.add('disabled-interface');
-    
+
     // Update interface state
     updateInterfaceState();
 
@@ -141,51 +249,51 @@ async function loadDomains(userData = null) {
         const domainSelect = document.getElementById('domain');
         domainSelect.innerHTML = '<option value="">Loading available domains...</option>';
         domainSelect.disabled = true;
-        
+
         const response = await fetch('/domains');
         const data = await response.json();
-        
+
         domainSelect.innerHTML = ''; // Clear any existing options
-        
+
         if (data.status === 'success' && data.domains) {
             // Count available domains
             const domainCount = Object.keys(data.domains).length;
-            
+
             if (domainCount === 0) {
                 domainSelect.innerHTML = '<option value="" disabled>No domains available</option>';
                 domainSelect.disabled = true;
                 return;
             }
-            
+
             // Get user's preferred domain (if available)
             const preferredDomain = userData?.domain || null;
             let preferredDomainExists = false;
-            
+
             // Add domain options
             Object.entries(data.domains).forEach(([code, name]) => {
                 const option = document.createElement('option');
                 option.value = code;
                 option.textContent = `${name} (${code})`;
-                
+
                 // Check if this is the user's preferred domain
                 if (preferredDomain && code === preferredDomain) {
                     option.selected = true;
                     domainSelect.parentElement.classList.add('is-filled');
                     preferredDomainExists = true;
                 }
-                
+
                 domainSelect.appendChild(option);
             });
-            
+
             // If no preferred domain or it doesn't exist in options, select first option
             if (!preferredDomainExists && domainSelect.options.length > 0) {
                 domainSelect.options[0].selected = true;
                 domainSelect.parentElement.classList.add('is-filled');
             }
-            
+
             // Enable the select
             domainSelect.disabled = false;
-            
+
             // Load subdomains for selected domain
             if (domainSelect.value) {
                 // Pass user preferences to loadSubdomains
@@ -207,45 +315,45 @@ async function loadDomains(userData = null) {
 async function loadSubdomains(domainCode, preferredSubdomain = null) {
     try {
         const subdomainSelect = document.getElementById('subdomain');
-        
+
         if (!domainCode) {
             subdomainSelect.innerHTML = '<option value="">All Subdomains</option>';
             subdomainSelect.disabled = true;
             return;
         }
-        
+
         subdomainSelect.innerHTML = '<option value="">Loading...</option>';
         subdomainSelect.disabled = true;
-        
+
         const response = await fetch(`/domains/${domainCode}/subdomains`);
         const data = await response.json();
-        
+
         subdomainSelect.innerHTML = ''; // Clear out loading message
-        
+
         if (data.status === 'success' && data.subdomains) {
             let preferredSubdomainExists = false;
-            
+
             data.subdomains.forEach(subdomain => {
                 const option = document.createElement('option');
                 option.value = subdomain.mnemonic;
                 option.textContent = `${subdomain.name} (${subdomain.mnemonic})`;
-                
+
                 // Check if this is the user's preferred subdomain
                 if (preferredSubdomain && subdomain.mnemonic === preferredSubdomain) {
                     option.selected = true;
                     subdomainSelect.parentElement.classList.add('is-filled');
                     preferredSubdomainExists = true;
                 }
-                
+
                 subdomainSelect.appendChild(option);
             });
-            
+
             // If no preferred subdomain or it doesn't exist in options, select first option
             if (!preferredSubdomainExists && subdomainSelect.options.length > 0) {
                 subdomainSelect.options[0].selected = true;
                 subdomainSelect.parentElement.classList.add('is-filled');
             }
-            
+
             subdomainSelect.disabled = false;
         } else {
             // No subdomains available
@@ -261,48 +369,51 @@ async function loadSubdomains(domainCode, preferredSubdomain = null) {
 }
 
 // Update domain change handler to preserve preferences where possible
-document.getElementById('domain').addEventListener('change', function() {
-    // Get userData to potentially pass preferred subdomain
-    const userDataElem = document.getElementById('userData');
-    let preferredSubdomain = null;
-    
-    if (userDataElem) {
-        try {
-            const userData = JSON.parse(userDataElem.textContent);
-            // Only use preferred subdomain if domain matches current selection
-            if (userData.domain === this.value) {
-                preferredSubdomain = userData.subdomain;
+const domainElem = document.getElementById('domain');
+if (domainElem) {
+    domainElem.addEventListener('change', function () {
+        // Get userData to potentially pass preferred subdomain
+        const userDataElem = document.getElementById('userData');
+        let preferredSubdomain = null;
+
+        if (userDataElem) {
+            try {
+                const userData = JSON.parse(userDataElem.textContent);
+                // Only use preferred subdomain if domain matches current selection
+                if (userData.domain === this.value) {
+                    preferredSubdomain = userData.subdomain;
+                }
+            } catch (e) {
+                console.error('Error parsing user data:', e);
             }
-        } catch (e) {
-            console.error('Error parsing user data:', e);
         }
-    }
-    
-    // Load subdomains with preference
-    loadSubdomains(this.value, preferredSubdomain);
-});
+
+        // Load subdomains with preference
+        loadSubdomains(this.value, preferredSubdomain);
+    });
+}
 
 // Simplify loadUserProfile since domain/subdomain handling is now in loadDomains
 function loadUserProfile() {
     const userDataElem = document.getElementById('userData');
     if (!userDataElem) return;
-    
+
     try {
         const userData = JSON.parse(userDataElem.textContent);
-        
+
         // Pre-fill basic form fields with user data (domains handled separately)
-        const fields = ['gender', 'age_group', 'country', 'state', 'city', 'accent', 'language'];
+    const fields = ['gender', 'age_range', 'country', 'state', 'district', 'city', 'accent', 'language', 'education'];
         fields.forEach(field => {
             const elem = document.getElementById(field);
             if (elem && userData[field]) {
                 elem.value = userData[field];
                 elem.parentElement.classList.add('is-filled');
-                
+
                 // Handle country change to load states
                 if (field === 'country' && userData['state']) {
                     const event = new Event('change');
                     elem.dispatchEvent(event);
-                    
+
                     setTimeout(() => {
                         const stateElem = document.getElementById('state');
                         if (stateElem) {
@@ -313,7 +424,7 @@ function loadUserProfile() {
                 }
             }
         });
-        
+
         // Note: Domain and subdomain are now handled by loadDomains and loadSubdomains
     } catch (e) {
         console.error('Error loading user profile:', e);
@@ -398,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Add near the top of the file after existing variable declarations
 document.addEventListener('DOMContentLoaded', () => {
     const setupFormScroll = document.querySelector('.setup-form-scroll');
-    
+
     setupFormScroll.addEventListener('scroll', () => {
         if (setupFormScroll.scrollTop > 0) {
             setupFormScroll.classList.add('scrolled');
@@ -435,7 +546,7 @@ function showConfirmDialog(message) {
         const backdrop = document.createElement('div');
         backdrop.className = 'modal-backdrop fade show';
         backdrop.style.backgroundColor = 'rgba(32, 33, 36, 0.6)';
-        
+
         document.body.appendChild(modal);
         document.body.appendChild(backdrop);
         document.body.classList.add('modal-open');
@@ -470,57 +581,61 @@ function showConfirmDialog(message) {
 }
 
 // Modify the submit button handler
-document.getElementById('sessionForm').addEventListener('submit', async function(e) {
+document.getElementById('sessionForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    
+
     // Get CSRF token once
     const csrfToken = getCsrfToken();
-    
+
     // Create form data
     const formData = new FormData();
-    
+
     // Add CSRF token to form data
     formData.append('csrf_token', csrfToken);
-    
-    // Safely get speaker name
+
     const speakerName = document.getElementById('speakerName')?.value || '';
     const gender = document.getElementById('gender')?.value || '';
     const language = document.getElementById('language')?.value || '';
     const country = document.getElementById('country')?.value || '';
     const state = document.getElementById('state')?.value || '';
     const city = document.getElementById('city')?.value || '';
-    const ageGroup = document.getElementById('age_group')?.value || '';
+    const ageRange = document.getElementById('age_range')?.value || '';
     const accent = document.getElementById('accent')?.value || '';
-    const domain = document.getElementById('domain')?.value || '';
-    const subdomain = document.getElementById('subdomain')?.value || '';
-    
+    const motherTongue = document.getElementById('mother_tongue')?.value || '';
+    const customMotherTongue = document.getElementById('customMotherTongue')?.value || '';
+    const education = document.getElementById('education')?.value || '';
+    const district = document.getElementById('district')?.value || '';
+
+
     // Validate required fields
     if (!language) {
         showToast('Please select a language', 'error');
         return;
     }
-    
-    if (!domain) {
-        showToast('Please select a domain', 'error');
+
+    if (!motherTongue) {
+        showToast('Please select a mother tongue', 'error');
         return;
     }
-    
-    if (!subdomain) {
-        showToast('Please select a subdomain', 'error');
+
+    if (!education) {
+        showToast('Please select education level', 'error');
         return;
     }
-    
+
     // Add form fields to formData with null checks
     formData.append('speakerName', speakerName);
     formData.append('gender', gender);
     formData.append('language', language);
     formData.append('country', country);
     formData.append('state', state);
+    formData.append('district', district);
     formData.append('city', city);
-    formData.append('age_group', ageGroup);
+    formData.append('age_range', ageRange);
     formData.append('accent', accent);
-    formData.append('domain', domain); 
-    formData.append('subdomain', subdomain);
+    formData.append('mother_tongue', motherTongue);
+    formData.append('customMotherTongue', customMotherTongue);
+    formData.append('education', education);
 
     const submitButton = document.querySelector('#sessionForm button[type="submit"]');
     const isUpdate = submitButton && submitButton.textContent === 'Update Session';
@@ -541,6 +656,13 @@ document.getElementById('sessionForm').addEventListener('submit', async function
             body: formData
         });
 
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            console.error("Error parsing JSON:", e);
+        }
+
         // If we got a 403, it's likely a CSRF error
         if (response.status === 403) {
             showToast('Session authentication error. Please refresh the page and try again.', 'error');
@@ -549,21 +671,23 @@ document.getElementById('sessionForm').addEventListener('submit', async function
 
         // If we got a 401, it's an authentication error and we need to redirect to login
         if (response.status === 401) {
-            const data = await response.json();
-            if (data.code === 'AUTH_ERROR') {
+            if (data && data.code === 'AUTH_ERROR') {
                 showToast('Your session has expired. Redirecting to login page...', 'error');
                 setTimeout(() => {
                     window.location.href = '/login';
                 }, 2000);
-                return;
+            } else if (data && data.error) {
+                // Show the specific error if provided
+                showToast(data.error, 'error');
+            } else {
+                showToast('Authentication error. Please login again.', 'error');
             }
+            return;
         }
-
-        const data = await response.json();
         if (response.ok) {
             // Update the speaker name field with the value from the server
             document.getElementById('speakerName').value = data.speaker_name;
-            
+
             // Store session data in sessionStorage
             const sessionData = {
                 gender: document.getElementById('gender').value,
@@ -572,30 +696,32 @@ document.getElementById('sessionForm').addEventListener('submit', async function
                 state: document.getElementById('state').value,
                 city: document.getElementById('city').value,
                 speaker_name: data.speaker_name,
-                age_group: document.getElementById('age_group').value,
-                accent: document.getElementById('accent').value
+                age_range: document.getElementById('age_range').value,
+                accent: document.getElementById('accent').value,
+                mother_tongue: document.getElementById('mother_tongue').value,
+                education: document.getElementById('education').value
             };
             sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
-            
+
             // Show success message
             showToast('Session started successfully', 'success');
-            
+
             // Update interface elements
             document.querySelector('.initial-message').style.display = 'none';
             document.querySelector('.transcript-container').style.display = 'block';
-            
+
             // Enable recording interface
             const recordingInterface = document.getElementById('recordingInterface');
             recordingInterface.classList.remove('disabled-interface');
             disableRecordingControls(false);
             updateButtonStates('initial');
-            
+
             // Load first transcript
             await loadNextTranscript();
-            
+
             // Update submit button text
             submitButton.textContent = 'Update Session';
-            
+
             // Update interface state
             updateInterfaceState();
 
@@ -608,7 +734,7 @@ document.getElementById('sessionForm').addEventListener('submit', async function
                     country,
                     state_province: state,
                     city,
-                    age_group: ageGroup,
+                    age_range: ageRange,
                     accent
                 };
             }
@@ -623,7 +749,7 @@ document.getElementById('sessionForm').addEventListener('submit', async function
                     setTimeout(() => overlay.remove(), 300);
                 }
             }
-            
+
         } else {
             showToast(data.error || 'Failed to start session', 'error');
         }
@@ -637,11 +763,11 @@ async function loadNextTranscript() {
     try {
         const response = await fetch('/next_transcript');
         const data = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(data.error || 'Failed to load next transcript');
         }
-        
+
         if (data.finished && data.current >= data.total) {
             showToast('Recording session completed!', 'success');
             setTimeout(() => {
@@ -652,12 +778,12 @@ async function loadNextTranscript() {
         }
 
         updateTranscriptDisplay(data);
-        
+
         // Store current row if valid
         if (data.current > 0) {
             sessionStorage.setItem(CURRENT_ROW_KEY, data.current.toString());
         }
-        
+
     } catch (error) {
         console.error('Error loading transcript:', error);
         showToast(error.message, 'error');
@@ -673,6 +799,86 @@ function updateProgressDisplay(current, total) {
 // Add these variables at the top
 let audioStream = null;
 let recorder = null;
+
+// Fetch available microphones and populate the select element
+async function populateMicrophones() {
+    const microphoneSelect = document.getElementById('microphoneSelect');
+    if (!microphoneSelect) return;
+    
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        
+        // Filter out default and communications virtual devices
+        let audioInputDevices = devices.filter(device => 
+            device.kind === 'audioinput' && 
+            device.deviceId !== 'default' && 
+            device.deviceId !== 'communications'
+        );
+        
+        // If filtering removed everything, fallback to all audio inputs
+        if (audioInputDevices.length === 0) {
+            audioInputDevices = devices.filter(device => device.kind === 'audioinput');
+        }
+        
+        // Deduplicate devices by groupId (represents physical hardware) or label
+        const uniqueDevices = [];
+        const seenGroups = new Set();
+        const seenLabels = new Set();
+        
+        audioInputDevices.forEach(device => {
+            const hasGroupId = device.groupId && device.groupId.trim() !== '';
+            const hasLabel = device.label && device.label.trim() !== '';
+            
+            let isDuplicate = false;
+            if (hasGroupId && seenGroups.has(device.groupId)) {
+                isDuplicate = true;
+            } else if (!hasGroupId && hasLabel && seenLabels.has(device.label)) {
+                isDuplicate = true;
+            }
+            
+            if (!isDuplicate) {
+                if (hasGroupId) seenGroups.add(device.groupId);
+                if (hasLabel) seenLabels.add(device.label);
+                uniqueDevices.push(device);
+            }
+        });
+        
+        const currentValue = microphoneSelect.value;
+        microphoneSelect.innerHTML = '';
+        
+        if (uniqueDevices.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Default Microphone';
+            microphoneSelect.appendChild(option);
+        } else {
+            uniqueDevices.forEach((device, index) => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                
+                // Clean up label if it still has virtual prefixes
+                let label = device.label || `Microphone ${index + 1}`;
+                label = label.replace(/^Default(?: - )?/, '').replace(/^Communications(?: - )?/, '');
+                
+                option.textContent = label;
+                microphoneSelect.appendChild(option);
+            });
+        }
+        
+        // Restore previous selection if still available
+        if (currentValue && Array.from(microphoneSelect.options).some(opt => opt.value === currentValue)) {
+            microphoneSelect.value = currentValue;
+        }
+    } catch (error) {
+        console.error('Error fetching microphones:', error);
+    }
+}
+
+// Keep the microphone list updated
+if (navigator.mediaDevices) {
+    navigator.mediaDevices.addEventListener('devicechange', populateMicrophones);
+}
+document.addEventListener('DOMContentLoaded', populateMicrophones);
 
 // Replace getSupportedMimeType function with setupAudioContext
 function setupAudioContext() {
@@ -699,53 +905,65 @@ document.getElementById('recordBtn').addEventListener('click', async () => {
             } else if (audioContext.state === 'suspended') {
                 await audioContext.resume();
             }
-            
+
             // Get user media stream
-            audioStream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    channelCount: 1, // Mono
-                    sampleRate: 48000,
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true
-                } 
+            const microphoneSelect = document.getElementById('microphoneSelect');
+            const selectedDeviceId = microphoneSelect ? microphoneSelect.value : '';
+            
+            const audioConstraints = {
+                channelCount: 1, // Mono
+                sampleRate: 48000,
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            };
+            
+            if (selectedDeviceId) {
+                audioConstraints.deviceId = { exact: selectedDeviceId };
+            }
+
+            audioStream = await navigator.mediaDevices.getUserMedia({
+                audio: audioConstraints
             });
             
+            // Update microphone list to get labels if permissions were just granted
+            populateMicrophones();
+
             // Connect the stream to audio context
             audioInput = audioContext.createMediaStreamSource(audioStream);
-            
+
             // Create script processor node for raw PCM capture
             scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-            
+
             // Reset the raw PCM data array
             rawPCMData = [];
             isRecordingPCM = true;
-            
+
             // Capture PCM data
             scriptProcessor.onaudioprocess = (event) => {
                 if (isRecordingPCM) {
                     // Get the raw PCM data from the input channel
                     const inputData = event.inputBuffer.getChannelData(0);
-                    
+
                     // Create a copy of the float32 data
                     const pcmChunk = new Float32Array(inputData.length);
                     pcmChunk.set(inputData);
-                    
+
                     // Store the chunk
                     rawPCMData.push(pcmChunk);
                 }
             };
-            
+
             // Connect nodes
             audioInput.connect(scriptProcessor);
             scriptProcessor.connect(audioContext.destination);
-            
+
             // Update UI with recording indicator
             recordBtn.innerHTML = '<span class="recording-dot"></span> Stop Recording';
             recordBtn.classList.add('recording', 'btn-danger', 'is-recording');
             recordBtn.classList.remove('btn-primary');
             updateButtonStates('recording');
-            
+
             // Set timeout to stop recording after MAX_RECORDING_DURATION
             recordingTimeout = setTimeout(() => {
                 if (isRecordingPCM) {
@@ -770,22 +988,22 @@ function stopPCMRecording() {
         // Stop recording
         isRecordingPCM = false;
         clearTimeout(recordingTimeout);
-        
+
         // Disconnect nodes to free up resources
         if (scriptProcessor && audioInput) {
             audioInput.disconnect(scriptProcessor);
             scriptProcessor.disconnect(audioContext.destination);
         }
-        
+
         // Stop tracks in the audio stream
         if (audioStream) {
             audioStream.getTracks().forEach(track => track.stop());
             audioStream = null;
         }
-        
+
         // Create audio blob from raw PCM data
         processPCMData();
-        
+
         // Update UI - restore original button state
         const recordBtn = document.getElementById('recordBtn');
         recordBtn.innerHTML = 'Start Recording'; // Remove dot and change text
@@ -802,59 +1020,59 @@ function processPCMData() {
     for (const chunk of rawPCMData) {
         totalLength += chunk.length;
     }
-    
+
     // Calculate parameters for fade effects and trimming
     const sampleRate = audioContext.sampleRate || 48000;
     const fadeInSamples = Math.min(sampleRate * 0.3, totalLength * 0.1); // 300ms fade in (max 10% of audio)
     const endTrimSamples = Math.min(sampleRate * 0.15, totalLength * 0.05); // 150ms trim at end (max 5% of audio)
     const fadeOutSamples = Math.min(sampleRate * 0.15, totalLength * 0.04); // 150ms fade out (max 4% of audio)
-    
+
     // Step 1: Create a merged array with all chunks (before trimming)
     const fullMergedPCM = new Float32Array(totalLength);
-    
+
     let offset = 0;
     for (const chunk of rawPCMData) {
         fullMergedPCM.set(chunk, offset);
         offset += chunk.length;
     }
-    
+
     // Step 2: Apply fade-in effect to the beginning
     for (let i = 0; i < fadeInSamples; i++) {
         // Compute the fade-in multiplier (0 to 1)
         const fadeRatio = i / fadeInSamples;
-        
+
         // Apply a smooth fade curve (cubic ease-in)
         const smoothFade = fadeRatio * fadeRatio * fadeRatio;
-        
+
         // Apply the fade
         fullMergedPCM[i] *= smoothFade;
     }
-    
+
     // Step 3: Create a trimmed version (excluding the end portion to be trimmed)
     const trimmedLength = Math.max(0, totalLength - endTrimSamples);
     const trimmedPCM = fullMergedPCM.slice(0, trimmedLength);
-    
+
     // Step 4: Apply fade-out effect to the end of the trimmed audio
     const fadeOutStartIndex = trimmedLength - fadeOutSamples;
     for (let i = 0; i < fadeOutSamples; i++) {
         if (fadeOutStartIndex + i >= trimmedLength) break;
-        
+
         // Compute the fade-out multiplier (1 to 0)
         const fadeRatio = 1 - (i / fadeOutSamples);
-        
+
         // Apply a smooth fade curve (cubic ease-out)
         const smoothFade = fadeRatio * fadeRatio * fadeRatio;
-        
+
         // Apply the fade
         trimmedPCM[fadeOutStartIndex + i] *= smoothFade;
     }
-    
+
     // Convert float32 PCM to 16-bit PCM (Int16)
     const pcm16bit = convertFloat32ToInt16(trimmedPCM);
-    
+
     // Create a blob with the processed PCM data
     audioBlob = new Blob([pcm16bit], { type: 'audio/pcm' });
-    
+
     // Add a flag to metadata indicating the audio was processed
     audioProcessed = true;
 }
@@ -883,48 +1101,48 @@ document.getElementById('playBtn').addEventListener('click', () => {
             // Create AudioContext for playback
             const playbackContext = new (window.AudioContext || window.webkitAudioContext)();
             const reader = new FileReader();
-            
-            reader.onload = function(e) {
+
+            reader.onload = function (e) {
                 try {
                     // Get the ArrayBuffer from the FileReader
                     const arrayBuffer = e.target.result;
-                    
+
                     // Convert the ArrayBuffer to Int16Array (assuming PCM data is 16-bit)
                     const int16Array = new Int16Array(arrayBuffer);
-                    
+
                     // Create an audio buffer with the same sample rate as recording
                     const sampleRate = audioContext ? audioContext.sampleRate : 48000;
                     const audioBuffer = playbackContext.createBuffer(1, int16Array.length, sampleRate);
-                    
+
                     // Get the audio buffer's first channel's Float32Array
                     const channelData = audioBuffer.getChannelData(0);
-                    
+
                     // Convert Int16 PCM back to Float32 format (-1.0 to 1.0)
                     for (let i = 0; i < int16Array.length; i++) {
                         // Convert Int16 [-32768, 32767] to Float32 [-1, 1]
                         channelData[i] = int16Array[i] / (int16Array[i] < 0 ? 32768 : 32767);
                     }
-                    
+
                     // Create audio source
                     const source = playbackContext.createBufferSource();
                     source.buffer = audioBuffer;
                     source.connect(playbackContext.destination);
-                    
+
                     // Play the audio
                     source.start(0);
                     document.getElementById('playBtn').textContent = 'Stop';
-                    
+
                     // Create a mock audio player interface
                     audioPlayer = {
-                        pause: function() {
+                        pause: function () {
                             source.stop(0);
                         },
                         paused: false,
                         currentTime: 0
                     };
-                    
+
                     // When audio finishes playing
-                    source.onended = function() {
+                    source.onended = function () {
                         document.getElementById('playBtn').textContent = 'Play';
                         audioPlayer = null;
                     };
@@ -935,7 +1153,7 @@ document.getElementById('playBtn').addEventListener('click', () => {
                     audioPlayer = null;
                 }
             };
-            
+
             // Read the blob as an array buffer
             reader.readAsArrayBuffer(audioBlob);
         }
@@ -964,10 +1182,10 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
 
     // Create FormData with PCM audio and metadata
     const formData = new FormData();
-    
+
     // Add CSRF token
     formData.append('csrf_token', getCsrfToken());
-    
+
     // Add audio blob with PCM type and sampleRate metadata
     formData.append('audio', audioBlob, 'recording.pcm');
     formData.append('sampleRate', '48000');
@@ -986,20 +1204,20 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
 
         if (response.ok) {
             const data = await response.json();
-            
+
             if (data.storage.includes('huggingface')) {
                 // Show initial upload toast
                 showToast('Starting upload to Hugging Face...', 'info');
-                
+
                 // Track the new upload
                 pendingUploads.set(data.upload_id, {
                     timestamp: Date.now(),
                     attempts: 0
                 });
-                
+
                 // Start polling for this upload
                 pollUploadStatus(data.upload_id);
-                
+
                 // Update UI to show upload progress
                 updateUploadStatus();
             } else if (data.storage.includes('local')) {
@@ -1009,7 +1227,7 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
                 // Show memory save toast
                 showToast('Recording saved in memory', 'success');
             }
-            
+
             // Update transcript display with next transcript if available
             if (data.next_transcript) {
                 document.getElementById('currentTranscript').textContent = data.next_transcript.text;
@@ -1020,23 +1238,23 @@ document.getElementById('saveBtn').addEventListener('click', async () => {
                 setTimeout(() => window.location.reload(), 2000);
                 return;
             }
-            
+
             // Reset recording controls for next recording
             isSaving = false;
             updateButtonStates('initial');
             resetRecordingControls();
-            
+
         } else {
             const error = await response.json();
             showToast('Error saving recording: ' + error.error, 'error');
-            
+
             // Re-enable controls if save failed
             isSaving = false;
             updateButtonStates('recorded');
         }
     } catch (error) {
         showToast('Error saving recording: ' + error, 'error');
-        
+
         // Re-enable controls if save failed
         isSaving = false;
         updateButtonStates('recorded');
@@ -1059,7 +1277,7 @@ function resetRecordingControls() {
     audioChunks = [];
     audioBlob = null;
     updateButtonStates('initial');
-    
+
     // Reset recording button state
     const recordBtn = document.getElementById('recordBtn');
     recordBtn.innerHTML = 'Start Recording'; // Reset the inner HTML
@@ -1071,15 +1289,15 @@ function resetRecordingControls() {
 document.querySelectorAll('.material-input .form-control').forEach(input => {
     // Add placeholder to maintain label position
     input.setAttribute('placeholder', ' ');
-    
+
     // Handle autofill styling
-    input.addEventListener('animationstart', function(e) {
+    input.addEventListener('animationstart', function (e) {
         if (e.animationName === 'onAutoFillStart') {
             this.parentElement.classList.add('is-filled');
         }
     });
-    
-    input.addEventListener('input', function() {
+
+    input.addEventListener('input', function () {
         if (this.value) {
             this.parentElement.classList.add('is-filled');
         } else {
@@ -1098,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (settingsToggle) {
         settingsToggle.addEventListener('click', () => {
             settingsPanel.classList.toggle('show');
-            
+
             // Create/toggle overlay
             let overlay = document.querySelector('.overlay');
             if (!overlay) {
@@ -1107,7 +1325,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body.appendChild(overlay);
             }
             overlay.classList.toggle('show');
-            
+
             // Close panel when clicking overlay
             overlay.addEventListener('click', () => {
                 settingsPanel.classList.remove('show');
@@ -1134,7 +1352,7 @@ function updateInterfaceState() {
     const recordingInterface = document.getElementById('recordingInterface');
     const initialMessage = document.getElementById('initialMessage');
     const transcriptContainer = document.querySelector('.transcript-container');
-    
+
     if (!isAuthenticated) {
         recordingInterface.classList.add('disabled-interface');
         initialMessage.style.display = 'block';
@@ -1148,7 +1366,7 @@ function updateInterfaceState() {
         recordingInterface.classList.add('disabled-interface');
         initialMessage.style.display = 'block';
         transcriptContainer.style.display = 'none';
-        
+
         // Show requirements without CSV reference
         initialMessage.innerHTML = `
             <div class="text-center empty-state">
@@ -1178,7 +1396,7 @@ function increaseFontSize() {
     const transcript = document.getElementById('currentTranscript');
     const sizeDisplay = document.getElementById('fontSizeDisplay');
     const currentSize = parseInt(window.getComputedStyle(transcript).fontSize);
-    
+
     if (currentSize < MAX_FONT_SIZE) {
         const newSize = currentSize + FONT_SIZE_STEP;
         transcript.style.setProperty('--transcript-font-size', `${newSize}px`);
@@ -1191,7 +1409,7 @@ function decreaseFontSize() {
     const transcript = document.getElementById('currentTranscript');
     const sizeDisplay = document.getElementById('fontSizeDisplay');
     const currentSize = parseInt(window.getComputedStyle(transcript).fontSize);
-    
+
     if (currentSize > MIN_FONT_SIZE) {
         const newSize = currentSize - FONT_SIZE_STEP;
         transcript.style.setProperty('--transcript-font-size', `${newSize}px`);
@@ -1213,7 +1431,7 @@ document.addEventListener('keydown', (e) => {
     }
 
     const recordBtn = document.getElementById('recordBtn');
-    
+
     switch (e.key.toLowerCase()) {
         case 'r':
             if (!recordBtn.disabled) {
@@ -1261,7 +1479,7 @@ function updateTranscriptScrollState() {
 
 // Update scroll state when transcript changes
 const originalLoadNextTranscript = loadNextTranscript;
-loadNextTranscript = async function() {
+loadNextTranscript = async function () {
     await originalLoadNextTranscript.apply(this, arguments);
     updateTranscriptScrollState();
 };
@@ -1269,12 +1487,12 @@ loadNextTranscript = async function() {
 // Add scroll state check to DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     // ...existing DOMContentLoaded code...
-    
+
     // Add scroll detection
     const transcriptBox = document.querySelector('.transcript-box');
     if (transcriptBox) {
         transcriptBox.addEventListener('scroll', () => {
-            const hasReachedBottom = 
+            const hasReachedBottom =
                 transcriptBox.scrollHeight - transcriptBox.scrollTop <= transcriptBox.clientHeight + 1;
             transcriptBox.classList.toggle('at-bottom', hasReachedBottom);
         });
@@ -1286,23 +1504,23 @@ function showToast(message, type = 'info') {
     const toast = document.getElementById('uploadToast');
     const toastHeader = toast.querySelector('.toast-header');
     const toastBody = toast.querySelector('.toast-body');
-    
+
     // Remove existing classes and icon
     toast.classList.remove('info', 'success', 'error', 'warning');
     const oldIcon = toastHeader.querySelector('.toast-icon');
     if (oldIcon) oldIcon.remove();
-    
+
     // Add appropriate class
     toast.classList.add(type);
-    
+
     // Add icon based on type
     const icon = document.createElement('div');
     icon.className = 'toast-icon';
     icon.innerHTML = getToastIcon(type);
     toastHeader.insertBefore(icon, toastHeader.firstChild);
-    
+
     toastBody.textContent = message;
-    
+
     // Initialize and show toast
     const bsToast = new bootstrap.Toast(toast, {
         autohide: true,
@@ -1343,14 +1561,14 @@ async function pollUploadStatus(uploadId) {
     try {
         const response = await fetch(`/check_upload/${uploadId}`);
         const data = await response.json();
-        
+
         if (data.complete) {
             pendingUploads.delete(uploadId);
             updateUploadStatus();
             showToast('Recording uploaded successfully! 🎉', 'success');
         } else {
             upload.attempts++;
-            showToast(`Upload in progress... (${Math.round((upload.attempts/30)*100)}%)`, 'info');
+            showToast(`Upload in progress... (${Math.round((upload.attempts / 30) * 100)}%)`, 'info');
             setTimeout(() => pollUploadStatus(uploadId), 2000);
         }
     } catch (error) {
@@ -1364,7 +1582,7 @@ async function pollUploadStatus(uploadId) {
 function updateUploadStatus() {
     const statusContainer = document.getElementById('uploadStatus');
     if (!statusContainer) return;
-    
+
     if (pendingUploads.size > 0) {
         showToast(`Uploading: ${pendingUploads.size} files pending...`);
         statusContainer.textContent = `Uploading: ${pendingUploads.size} pending`;
@@ -1374,41 +1592,12 @@ function updateUploadStatus() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Populate country dropdown
-    const countrySelect = document.getElementById('country');
-    const stateSelect = document.getElementById('state');
-
-    // Populate countries
-    for (const [code, name] of Object.entries(country_and_states.country)) {
-        const option = document.createElement('option');
-        option.value = code;
-        option.textContent = name;
-        countrySelect.appendChild(option);
-    }
-
-    // Update states based on selected country
-    countrySelect.addEventListener('change', () => {
-        const selectedCountry = countrySelect.value;
-        // Clear existing state options
-        stateSelect.innerHTML = '<option value="">Select State/Province</option>';
-        if (selectedCountry && country_and_states.states[selectedCountry]) {
-            country_and_states.states[selectedCountry].forEach(state => {
-                const option = document.createElement('option');
-                option.value = state.code;
-                option.textContent = state.name;
-                stateSelect.appendChild(option);
-            });
-        }
-    });
-});
-
 // Add near the top of the file after other document.ready handlers
 document.addEventListener('DOMContentLoaded', () => {
     const consentCheckbox = document.getElementById('consentCheckbox');
     const startSessionBtn = document.getElementById('startSessionBtn');
 
-    consentCheckbox.addEventListener('change', function() {
+    consentCheckbox.addEventListener('change', function () {
         startSessionBtn.disabled = !this.checked;
     });
 });
@@ -1419,7 +1608,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsToggle = document.getElementById('settingsToggle');
     const settingsPanel = document.getElementById('settingsPanel');
     const settingsCloseBtn = document.getElementById('settingsCloseBtn');
-    
+
     function closeSettingsPanel() {
         settingsPanel.classList.remove('show');
         const overlay = document.querySelector('.overlay');
@@ -1432,16 +1621,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (settingsToggle) {
         settingsToggle.addEventListener('click', () => {
             settingsPanel.classList.add('show');
-            
+
             // Create overlay if it doesn't exist
             if (!document.querySelector('.overlay')) {
                 const overlay = document.createElement('div');
                 overlay.className = 'overlay';
                 document.body.appendChild(overlay);
-                
+
                 // Add click event to overlay
                 overlay.addEventListener('click', closeSettingsPanel);
-                
+
                 // Show overlay after a brief delay to ensure smooth animation
                 setTimeout(() => overlay.classList.add('show'), 10);
             }
@@ -1459,14 +1648,14 @@ function clearSession() {
     // Clear session storage
     sessionStorage.removeItem(SESSION_STORAGE_KEY);
     sessionStorage.removeItem(CURRENT_ROW_KEY);
-    
+
     // Reset current transcript and progress
     document.getElementById('currentTranscript').textContent = '';
     updateProgressDisplay(0, 0);
-    
+
     // Reset interface state
     updateInterfaceState();
-    
+
     // Reset recording controls
     resetRecordingControls();
     disableRecordingControls(true);
@@ -1474,7 +1663,7 @@ function clearSession() {
 
 // Add this function for handling navigation errors
 function handleNavigationError(data) {
-    switch(data.code) {
+    switch (data.code) {
         case 'NO_SESSION':
             showToast('Please start a session first', 'warning');
             break;
@@ -1497,10 +1686,10 @@ function handleNavigationError(data) {
 function updateTranscriptDisplay(data) {
     // Update transcript text
     document.getElementById('currentTranscript').textContent = data.transcript;
-    
+
     // Update progress
     updateProgressDisplay(data.current, data.total);
-    
+
     // Show/hide previously recorded badge
     const recordingStatus = document.getElementById('recordingStatus');
     if (recordingStatus) {
@@ -1519,11 +1708,11 @@ async function loadNextTranscript() {
     try {
         const response = await fetch('/next_transcript');
         const data = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(data.error || 'Failed to load next transcript');
         }
-        
+
         if (data.finished && data.current >= data.total) {
             showToast('Recording session completed!', 'success');
             setTimeout(() => {
@@ -1534,12 +1723,12 @@ async function loadNextTranscript() {
         }
 
         updateTranscriptDisplay(data);
-        
+
         // Store current row if valid
         if (data.current > 0) {
             sessionStorage.setItem(CURRENT_ROW_KEY, data.current.toString());
         }
-        
+
     } catch (error) {
         console.error('Error loading transcript:', error);
         showToast(error.message, 'error');
@@ -1549,7 +1738,7 @@ async function loadNextTranscript() {
 // Add debounce function to prevent multiple rapid clicks
 function debounce(func, wait) {
     let timeout;
-    return function(...args) {
+    return function (...args) {
         const context = this;
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(context, args), wait);
@@ -1564,15 +1753,15 @@ let isSkipBtnDisabled = false;
 document.getElementById('prevBtn').addEventListener('click', debounce(async () => {
     // Prevent multiple clicks while processing
     if (isPrevBtnDisabled) return;
-    
+
     try {
         // Disable the button immediately to prevent multiple clicks
         isPrevBtnDisabled = true;
         document.getElementById('prevBtn').disabled = true;
-        
+
         const response = await fetch('/prev_transcript');
         const data = await response.json();
-        
+
         if (response.ok) {
             // Even if we got a boundary error but still have transcript data,
             // update the display with what we have
@@ -1580,7 +1769,7 @@ document.getElementById('prevBtn').addEventListener('click', debounce(async () =
                 updateTranscriptDisplay(data);
                 sessionStorage.setItem(CURRENT_ROW_KEY, data.current.toString());
             }
-            
+
             // Handle boundary condition
             if (data.code === 'BOUNDARY_ERROR') {
                 showToast('Already at first transcript', 'info');
@@ -1604,15 +1793,15 @@ document.getElementById('prevBtn').addEventListener('click', debounce(async () =
 document.getElementById('skipBtn').addEventListener('click', debounce(async () => {
     // Prevent multiple clicks while processing
     if (isSkipBtnDisabled) return;
-    
+
     try {
         // Disable the button immediately to prevent multiple clicks
         isSkipBtnDisabled = true;
         document.getElementById('skipBtn').disabled = true;
-        
+
         const response = await fetch('/skip_transcript');
         const data = await response.json();
-        
+
         if (response.ok) {
             // Even if we got a boundary error but still have transcript data,
             // update the display with what we have
@@ -1620,7 +1809,7 @@ document.getElementById('skipBtn').addEventListener('click', debounce(async () =
                 updateTranscriptDisplay(data);
                 sessionStorage.setItem(CURRENT_ROW_KEY, data.current.toString());
             }
-            
+
             // Handle boundary condition - always ensure Prev button is enabled
             // when we're at the end (even after multiple "Skip" clicks)
             if (data.code === 'BOUNDARY_ERROR') {
@@ -1642,7 +1831,7 @@ document.getElementById('skipBtn').addEventListener('click', debounce(async () =
         setTimeout(() => {
             isSkipBtnDisabled = false;
             document.getElementById('skipBtn').disabled = false;
-            
+
             // Additional safety check to ensure Prev button is enabled
             // if we received a boundary error
             if (document.getElementById('prevBtn').disabled) {

@@ -1013,3 +1013,49 @@ button[aria-expanded="true"] .filter-chevron {
     transform: rotate(180deg);
 }
 
+/* Assign Modal Styles - Fix for white background visibility issue */
+#assignModal .modal-content {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+#assignModal .modal-header {
+    background-color: #f8f9fa !important;
+    color: #000000 !important;
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+#assignModal .modal-body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+#assignModal .modal-footer {
+    background-color: #f8f9fa !important;
+    color: #000000 !important;
+    border-top: 1px solid #dee2e6 !important;
+}
+
+#assignModal .modal-title {
+    color: #000000 !important;
+}
+
+#assignModal .form-label {
+    color: #000000 !important;
+}
+
+#assignModal select {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #ced4da !important;
+}
+
+#assignModal select option {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+#assignModal p {
+    color: #000000 !important;
+}
+

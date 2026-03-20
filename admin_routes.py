@@ -8,6 +8,7 @@ from language_config import get_all_languages
 import csv
 from io import StringIO
 from datetime import datetime
+import os
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 logger = logging.getLogger(__name__)
@@ -88,16 +89,7 @@ def admin_interface():
                              verification_rate=0,
                              domains=get_all_domains())
 
-# Add new endpoint to get subdomains for a domain
-@admin_bp.route('/subdomains/<domain_code>')
-@admin_required
-def get_subdomains(domain_code):
-    try:
-        subdomains = get_domain_subdomains(domain_code)
-        return jsonify({'subdomains': subdomains})
-    except Exception as e:
-        logger.error(f"Error fetching subdomains: {e}")
-        return jsonify({'error': str(e)}), 500
+
 
 @admin_bp.route('/submit', methods=['POST'])
 @admin_required
@@ -108,8 +100,6 @@ def submit_transcription():
     pb_user = pb.collection('users').get_one(user_id)
     
     language = request.form.get('language')
-    domain = request.form.get('domain', '')
-    subdomain = request.form.get('subdomain', '')
     transcription_text = request.form.get('transcription_text')
     file = request.files.get('fileInput')
 
@@ -117,59 +107,59 @@ def submit_transcription():
         return jsonify({'error': 'Language is required'}), 400
 
     try:
+        # Save or update the language CSV in the transcript folder
+        transcript_dir = os.path.join(current_app.root_path, 'transcript')
+        os.makedirs(transcript_dir, exist_ok=True)
+        csv_path = os.path.join(transcript_dir, f"{language}_transcript.csv")
+        
+        # We always want to save the content (whether from file or text area) to the CSV
+        content_to_save = ""
+        if file and file.filename:
+            content = file.read().decode('utf-8')
+            content_to_save = content
+            # Reset the file pointer if we need to parse it below (or just use content)
+        elif transcription_text:
+            content_to_save = transcription_text
+
+        if content_to_save:
+            with open(csv_path, 'w', encoding='utf-8', newline='') as f:
+                f.write(content_to_save)
+            logger.info(f"Saved transcript CSV to {csv_path}")
+
         # Create language-specific table if it doesn't exist
         with engine.connect() as conn:
             from database_manager import ensure_transcription_table
             ensure_transcription_table(conn, language)
 
-            if file:
-                content = file.read().decode('utf-8')
-                
-                if file.filename.endswith('.csv'):
-                    csv_reader = csv.reader(StringIO(content))
+            if content_to_save:
+                # We can reuse the content string instead of file / text area branching
+                lines = content_to_save.splitlines()
+                # If it's a CSV, parse it with csv module, else just lines
+                if (file and file.filename and file.filename.endswith('.csv')):
+                    csv_reader = csv.reader(StringIO(content_to_save))
                     for row in csv_reader:
                         if row:  # Skip empty rows
                             query = text(f"""
                                 INSERT INTO transcriptions_{language} 
-                                (user_id, transcription_text, recorded, domain, subdomain)
-                                VALUES (:user_id, :transcription_text, false, :domain, :subdomain)
+                                (user_id, transcription_text, recorded)
+                                VALUES (:user_id, :transcription_text, false)
                             """)
                             conn.execute(query, {
                                 "user_id": user_id,
-                                "transcription_text": row[0].strip(),
-                                "domain": domain,
-                                "subdomain": subdomain
+                                "transcription_text": row[0].strip()
                             })
-                else:  # Treat as .txt
-                    lines = content.splitlines()
+                else:  # Treat as .txt or direct text input
                     for line in lines:
                         if line.strip():  # Skip empty lines
                             query = text(f"""
                                 INSERT INTO transcriptions_{language} 
-                                (user_id, transcription_text, recorded, domain, subdomain)
-                                VALUES (:user_id, :transcription_text, false, :domain, :subdomain)
+                                (user_id, transcription_text, recorded)
+                                VALUES (:user_id, :transcription_text, false)
                             """)
                             conn.execute(query, {
                                 "user_id": user_id,
-                                "transcription_text": line.strip(),
-                                "domain": domain,
-                                "subdomain": subdomain
+                                "transcription_text": line.strip()
                             })
-            elif transcription_text:
-                # Handle direct text input
-                for line in transcription_text.splitlines():
-                    if line.strip():  # Skip empty lines
-                        query = text(f"""
-                            INSERT INTO transcriptions_{language} 
-                            (user_id, transcription_text, recorded, domain, subdomain)
-                            VALUES (:user_id, :transcription_text, false, :domain, :subdomain)
-                        """)
-                        conn.execute(query, {
-                            "user_id": user_id,
-                            "transcription_text": line.strip(),
-                            "domain": domain,
-                            "subdomain": subdomain
-                        })
             else:
                 return jsonify({'error': 'No content provided'}), 400
 
@@ -223,7 +213,7 @@ def search_user():
 
         pb = current_app.pb
         # Build filter query for multiple emails
-        email_filters = ' || '.join([f'email = "{email}"' for email in emails])
+        email_filters = ' || '.join([f'email ~ "{email.lower()}"' for email in emails])
         users = pb.collection('users').get_list(
             query_params={
                 'filter': f'({email_filters})',
@@ -274,7 +264,7 @@ def update_user_role(user_id):
         try:
             # First check if target user exists and is not admin
             user = pb.collection('users').get_one(user_id)
-            if user.role == 'admin':
+            if getattr(user, 'role', '') == 'admin':
                 return jsonify({'error': 'Cannot modify admin user roles'}), 403
                 
             # Update the role

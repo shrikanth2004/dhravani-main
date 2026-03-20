@@ -127,7 +127,7 @@ def init_auth(app):
         
         # Restore PocketBase auth if token exists in session
         pb_token = session.get('user', {}).get('token')
-        if pb_token and not app.pb.auth_store.token:
+        if pb_token:
             try:
                 # Restore PocketBase authentication state
                 app.pb.auth_store.save(pb_token, None)
@@ -139,15 +139,18 @@ def init_auth(app):
         # Set user data from validated token
         if not session.get('user') or session['user'].get('id') != payload['user_id']:
             try:
-                # Try to fetch user from PocketBase
+                # Try to fetch user from PocketBase to get latest role
                 user = app.pb.collection('users').get_one(payload['user_id'])
+                
+                # Get the role from PocketBase (could be admin, moderator, or user)
+                user_role = getattr(user, 'role', payload.get('role', 'user'))
                 
                 # Store minimal user data in session
                 session['user'] = {
                     'id': payload['user_id'],
                     'email': payload['email'],
-                    'role': payload['role'],
-                    # Add other fields as needed
+                    'role': user_role,
+                    'is_moderator': user_role in ['moderator', 'admin'],
                 }
             except Exception as e:
                 logger.error(f"Error fetching user: {str(e)}")
@@ -155,8 +158,18 @@ def init_auth(app):
                 session['user'] = {
                     'id': payload['user_id'],
                     'email': payload['email'],
-                    'role': payload['role'],
+                    'role': payload.get('role', 'user'),
                 }
+        else:
+            # Refresh role from PocketBase to get latest updates
+            try:
+                user = app.pb.collection('users').get_one(payload['user_id'])
+                user_role = getattr(user, 'role', session['user'].get('role', 'user'))
+                session['user']['role'] = user_role
+                session['user']['is_moderator'] = user_role in ['moderator', 'admin']
+                session.modified = True
+            except Exception as e:
+                logger.debug(f"Could not refresh user role: {e}")
 
         # Always ensure session is permanent
         session.permanent = True

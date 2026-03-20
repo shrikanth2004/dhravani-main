@@ -1,1 +1,71 @@
+
+# Virtual environment
 venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+database.db
+
+# Log files
+*.log
+dataset_sync.log
+
+# Audio files and datasets
+datasets/
+audio/
+*.wav
+*.mp3
+*.flac
+*.ogg
+
+# PocketBase
+pocketbase/
+pb_data/
+pb_migrations/
+
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+test.wav
+
+# CSV data files (large)
+transcript.csv
+
+# Package lock
+package-lock.json
+
+# Backup files
+*.bak
+
+# Temporary files
